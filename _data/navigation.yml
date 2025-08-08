@@ -1,0 +1,8 @@
+# _data/navigation.yml
+header:
+  - name: "首页"
+    url: "/"
+  - name: "博客"
+    url: "/blog/"
+  - name: "计算机基础知识"
+    url: "/blog/"
