@@ -1,0 +1,123 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { navConfig } from '../../../config/nav';
+
+export async function getStaticPaths() {
+  const paths = [];
+  const categories = Object.keys(navConfig);
+
+  for (const category of categories) {
+    const posts = await getCollection(category as any);
+    
+    // Process Level 3 Posts ONLY
+    for (const post of posts) {
+      if (post.data.subcategory && post.data.term) {
+        // Level 3 Article: category/subcategory/term/slug
+        // We need to construct the full relative slug for [...slug]
+        
+        const rawSlug = post.slug.split('/').pop(); 
+        const pageSlug = `${post.data.term}/${rawSlug}`;
+        
+        paths.push({
+            params: { 
+                category, 
+                subcategory: post.data.subcategory, 
+                slug: pageSlug 
+            },
+            props: { post, term: post.data.term }
+        });
+      }
+    }
+  }
+  
+  return paths;
+}
+
+const { category, subcategory, slug } = Astro.params;
+const { post, term } = Astro.props;
+
+const { Content } = await post.render();
+
+// Sidebar: Show posts in the same Term
+const allPosts = await getCollection(category as any);
+const sidebarPosts = allPosts
+    .filter(p => p.data.subcategory === subcategory && p.data.term === term)
+    .sort((a, b) => (a.data.order || 100) - (b.data.order || 100))
+    .map(p => ({
+        ...p,
+        link: `/${category}/${subcategory}/${term}/${p.slug.split('/').pop()}`
+    }));
+
+---
+
+<Layout 
+	title={post.data.title} 
+	activeCategory={category} 
+	activeSubcategory={subcategory}
+    activeTerm={term}
+	sidebarPosts={sidebarPosts}
+	activeSlug={slug.split('/').pop()} 
+>
+	<article>
+		<header class="article-header">
+			<h1>{post.data.title}</h1>
+			<p class="meta">
+				<time>{new Date(post.data.date).toLocaleDateString()}</time>
+                <span class="term-tag">{term}</span>
+			</p>
+		</header>
+		<div class="prose">
+			<Content />
+		</div>
+	</article>
+</Layout>
+
+<style>
+	.article-header {
+		margin-bottom: 2rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		padding-bottom: 1rem;
+	}
+	
+	.meta {
+		color: #cccccc;
+		font-size: 0.9rem;
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		padding: 1rem;
+		background: #000000;
+		border-radius: 4px;
+	}
+
+    .term-tag {
+        background: rgba(168, 85, 247, 0.2);
+        color: #d8b4fe;
+        padding: 0.1rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    
+    .prose {
+        color: #ffffff;
+        line-height: 1.8;
+        background: #000000;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+    .prose h1, .prose h3 {
+        color: #fff;
+    }
+    .prose h2 {
+        color: #fff;
+        background: #1a1a1a;
+        padding: 0.5rem 0.75rem;
+        border-left: 4px solid #a855f7;
+        border-radius: 4px;
+        margin: 1.5rem 0;
+    }
+    .prose a {
+        color: #a855f7;
+    }
+</style>

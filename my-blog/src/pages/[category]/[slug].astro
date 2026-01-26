@@ -1,0 +1,66 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const categories = ['computer', 'reading', 'life'];
+  let paths = [];
+
+  for (const category of categories) {
+    // 使用类型断言确保 TypeScript 知道这是一个有效的集合名称
+    const posts = await getCollection(category as 'computer' | 'reading' | 'life');
+    for (const post of posts) {
+      // Only include posts that are NOT in a subdirectory (no slash in slug)
+      // This avoids conflict with [category]/[subcategory]/[slug]
+      if (!post.slug.includes('/')) {
+        paths.push({
+          params: { category, slug: post.slug },
+          props: { post },
+        });
+      }
+    }
+  }
+
+  return paths;
+}
+
+const { category, slug } = Astro.params;
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+// Fetch all posts in this category for the sidebar
+const sidebarPosts = await getCollection(category as any);
+const sortedSidebarPosts = sidebarPosts.sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf());
+---
+
+<Layout 
+	title={post.data.title} 
+	activeCategory={category} 
+	sidebarPosts={sortedSidebarPosts}
+	activeSlug={slug}
+>
+	<article>
+		<header>
+			<h1>{post.data.title}</h1>
+			<p class="meta">
+				<time>{new Date(post.data.date).toLocaleDateString()}</time>
+			</p>
+		</header>
+		<div class="prose">
+			<Content />
+		</div>
+	</article>
+</Layout>
+
+<style>
+	header {
+		margin-bottom: 2rem;
+		border-bottom: 1px solid #eee;
+		padding-bottom: 1rem;
+	}
+	
+	.meta {
+		color: #666;
+		font-size: 0.9rem;
+	}
+</style>

@@ -1,0 +1,30 @@
+---
+import Layout from './Layout.astro';
+
+const { frontmatter } = Astro.props;
+---
+
+<Layout title={frontmatter.title}>
+	<article>
+		<header>
+			<h1>{frontmatter.title}</h1>
+			<p class="meta">Published on {frontmatter.date}</p>
+		</header>
+		<div class="prose">
+			<slot />
+		</div>
+	</article>
+</Layout>
+
+<style>
+	header {
+		margin-bottom: 2rem;
+		border-bottom: 1px solid #eee;
+		padding-bottom: 1rem;
+	}
+	
+	.meta {
+		color: #666;
+		font-size: 0.9rem;
+	}
+</style>

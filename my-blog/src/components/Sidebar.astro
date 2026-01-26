@@ -1,0 +1,161 @@
+---
+import { sidebarConfig } from '../config/nav';
+
+export interface Props {
+	activeCategory?: string;
+	activeSubcategory?: string;
+	activeTerm?: string;
+	activeSlug?: string;
+	posts?: any[];
+}
+
+const { activeCategory, activeSubcategory, activeTerm, activeSlug, posts = [] } = Astro.props;
+
+// 优先使用手动配置的侧边栏
+// 如果有 Term，优先查找 Term 的配置；否则查找 Subcategory 的配置
+let manualSidebar = null;
+if (activeCategory && activeSubcategory) {
+	if (activeTerm) {
+		manualSidebar = sidebarConfig[`${activeCategory}/${activeSubcategory}/${activeTerm}`];
+	}
+	// 如果 Term 没配置，或者是 Level 2 页面，尝试 Subcategory 配置
+	// 注意：如果是在 Term 页面但没有 Term 配置，是否回退到 Subcategory 配置？
+	// 之前的逻辑是 "侧边栏只展示类似于目录"，所以如果 Term 没有特定配置，
+	// 可能应该展示 Term 的自动列表（即传入的 posts），而不是 Subcategory 的手动列表。
+	// 所以只有当 manualSidebar 为 null 且 posts 为空时，才考虑回退？
+	// 或者严格按照 Key 匹配。
+	
+	if (!manualSidebar && !activeTerm) {
+		manualSidebar = sidebarConfig[`${activeCategory}/${activeSubcategory}`];
+	}
+}
+
+// 如果没有手动配置，则使用传入的 posts
+const displayItems = manualSidebar || posts.map(post => ({
+	title: post.title || post.data.title,
+	link: post.link || `/${activeCategory}/${activeSubcategory}/${post.slug.split('/').pop()}`
+}));
+---
+
+<aside class="sidebar">
+	<div class="sidebar-content">
+		<h3>目录</h3>
+		{displayItems.length === 0 ? (
+			<p class="empty-msg">暂无内容</p>
+		) : (
+			<ul class="post-list">
+				{displayItems.map((item) => (
+					<li class={(activeSlug && item.link.endsWith(activeSlug)) || (!activeSlug && !item.link.split('/').pop()) ? 'active' : ''}>
+						<a href={item.link}>{item.title}</a>
+					</li>
+				))}
+			</ul>
+		)}
+	</div>
+</aside>
+
+<style>
+	.sidebar {
+		width: 250px;
+		flex-shrink: 0;
+		/* border-right: 1px solid #eee; */ /* Removed border */
+		padding-right: 2rem;
+		margin-right: 2rem;
+		height: calc(100vh - 150px);
+		position: sticky;
+		top: 8rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+	}
+	
+	.sidebar::-webkit-scrollbar {
+		width: 4px;
+	}
+	
+	.sidebar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	
+	.sidebar::-webkit-scrollbar-thumb {
+		background-color: rgba(168, 85, 247, 0.3);
+		border-radius: 4px;
+	}
+
+	.sidebar-content h3 {
+		font-size: 1.1rem;
+		margin-top: 0;
+		margin-bottom: 1.5rem;
+		color: #a855f7;
+		text-transform: uppercase;
+		letter-spacing: 2px;
+		font-weight: 800;
+		text-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+		border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+		padding-bottom: 0.5rem;
+	}
+
+	.post-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.post-list li {
+		margin-bottom: 0.5rem;
+	}
+
+	.post-list a {
+		color: #94a3b8;
+		text-decoration: none;
+		display: block;
+		padding: 0.5rem 0.75rem;
+		transition: all 0.3s ease;
+		font-size: 0.95rem;
+		border-left: 2px solid transparent;
+		border-radius: 0 4px 4px 0;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.post-list a:hover {
+		color: #fff;
+		border-left-color: #a855f7;
+		background: #1a1a1a;
+		padding-left: 1rem;
+		text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+	}
+
+	.post-list li.active a {
+		color: #fff;
+		font-weight: 600;
+		border-left-color: #3b82f6;
+		background: #000000;
+		text-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+	}
+	
+	/* Add a glowing dot for active item */
+	.post-list li.active a::before {
+		content: '';
+		position: absolute;
+		left: -2px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 2px;
+		height: 70%;
+		background: #3b82f6;
+		box-shadow: 0 0 10px #3b82f6;
+	}
+
+	.empty-msg {
+		color: #64748b;
+		font-size: 0.9rem;
+		font-style: italic;
+	}
+
+	@media (max-width: 768px) {
+		.sidebar {
+			display: none;
+		}
+	}
+</style>

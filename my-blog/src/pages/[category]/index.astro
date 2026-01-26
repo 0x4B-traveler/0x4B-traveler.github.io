@@ -1,0 +1,59 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { navConfig } from '../../config/nav';
+
+export function getStaticPaths() {
+  return Object.keys(navConfig).map(category => ({
+    params: { category },
+  }));
+}
+
+const { category } = Astro.params;
+const categoryInfo = navConfig[category];
+const subcategories = categoryInfo ? Object.entries(categoryInfo.subcategories) : [];
+---
+
+<Layout title={`${categoryInfo?.label || category} - My Blog`} activeCategory={category}>
+	<h1>{categoryInfo?.label || category}</h1>
+	<p>请选择一个子分类：</p>
+	
+	<div class="subcategory-list">
+		{subcategories.map(([slug, info]) => (
+			<a href={`/${category}/${slug}`} class="subcategory-card">
+				<h2>{info.label}</h2>
+			</a>
+		))}
+	</div>
+</Layout>
+
+<style>
+	.subcategory-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 2rem;
+		margin-top: 2rem;
+	}
+
+	.subcategory-card {
+		display: block;
+		padding: 2rem;
+		background: #000000;
+		border: 1px solid #333333;
+		border-radius: 8px;
+		text-decoration: none;
+		color: inherit;
+		transition: all 0.2s;
+		text-align: center;
+	}
+
+	.subcategory-card:hover {
+		border-color: #a855f7;
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+	}
+
+	.subcategory-card h2 {
+		margin: 0;
+		font-size: 1.2rem;
+	}
+</style>

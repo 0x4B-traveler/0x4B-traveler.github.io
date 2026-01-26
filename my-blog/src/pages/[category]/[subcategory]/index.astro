@@ -1,0 +1,111 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { navConfig, sidebarConfig } from '../../../config/nav';
+
+export async function getStaticPaths() {
+  const paths = [];
+  
+  for (const [category, catInfo] of Object.entries(navConfig)) {
+    for (const [subcategory, subInfo] of Object.entries(catInfo.subcategories)) {
+      paths.push({
+        params: { category, subcategory },
+        props: { categoryLabel: catInfo.label, subcategoryLabel: subInfo.label }
+      });
+    }
+  }
+  
+  return paths;
+}
+
+const { category, subcategory } = Astro.params;
+const { categoryLabel, subcategoryLabel } = Astro.props;
+
+// 获取该子分类下的文章
+const posts = await getCollection(category as any);
+const filteredPosts = posts.filter(post => post.data.subcategory === subcategory);
+const sortedPosts = filteredPosts.sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+
+// 检查是否有手动配置的侧边栏
+const manualSidebar = sidebarConfig[`${category}/${subcategory}`];
+const displayItems = manualSidebar || sortedPosts.map(post => ({
+	title: post.data.title,
+	link: post.data.term 
+		? `/${category}/${subcategory}/${post.data.term}/${post.slug.split('/').pop()}` 
+		: `/${category}/${subcategory}/${post.slug.split('/').pop()}`,
+	description: post.data.description,
+	date: post.data.date
+}));
+---
+
+<Layout 
+	title={`${subcategoryLabel} - ${categoryLabel}`} 
+	activeCategory={category} 
+	activeSubcategory={subcategory}
+	posts={sortedPosts}
+>
+	<header class="sub-header">
+		<h1>{subcategoryLabel}</h1>
+		<p class="breadcrumb">{categoryLabel} / {subcategoryLabel}</p>
+	</header>
+
+	<div class="post-list">
+		{displayItems.map(item => (
+			<article class="post-preview">
+				<h2><a href={item.link}>{item.title}</a></h2>
+				{item.date && <time>{new Date(item.date).toLocaleDateString()}</time>}
+				{item.description && <p>{item.description}</p>}
+			</article>
+		))}
+		
+		{displayItems.length === 0 && (
+			<p>该分类下暂无文章。</p>
+		)}
+	</div>
+</Layout>
+
+<style>
+	.sub-header {
+		margin-bottom: 3rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		padding-bottom: 1rem;
+	}
+
+	.breadcrumb {
+		color: #cccccc;
+		font-size: 0.9rem;
+		margin-top: 0.5rem;
+	}
+
+	.post-preview {
+		margin-bottom: 2rem;
+	}
+	
+	.post-preview h2 {
+		margin-bottom: 0.5rem;
+		font-size: 1.4rem;
+	}
+
+	.post-preview a {
+		text-decoration: none;
+		color: #ffffff;
+	}
+
+	.post-preview a:hover {
+		text-decoration: underline;
+		color: #a855f7;
+	}
+	
+	.post-preview time {
+		color: #cccccc;
+		font-size: 0.85rem;
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+	
+	.post-preview p {
+		margin: 0;
+		color: #cccccc;
+		line-height: 1.6;
+	}
+</style>

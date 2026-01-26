@@ -1,0 +1,230 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { navConfig, sidebarConfig } from '../../../config/nav';
+
+export async function getStaticPaths() {
+  const paths = [];
+  const categories = Object.keys(navConfig);
+
+  for (const category of categories) {
+    const posts = await getCollection(category as any);
+    
+    // 1. Process Level 2 Posts
+    for (const post of posts) {
+      if (post.data.subcategory && !post.data.term) {
+        // Level 2 Article: category/subcategory/slug
+        const rawSlug = post.slug.split('/').pop(); 
+        
+        paths.push({
+            params: { 
+                category, 
+                subcategory: post.data.subcategory, 
+                slug: rawSlug 
+            },
+            props: { type: 'post', post }
+        });
+      }
+    }
+    
+    // 2. Process Level 3 Terms (List Pages)
+    // /computer/frontend/react -> slug: 'react'
+    const catConfig = navConfig[category];
+    if (catConfig && catConfig.subcategories) {
+        for (const [subKey, subInfo] of Object.entries(catConfig.subcategories)) {
+            if (subInfo.terms) {
+                for (const [termKey, termLabel] of Object.entries(subInfo.terms)) {
+                    paths.push({
+                        params: { category, subcategory: subKey, slug: termKey },
+                        props: { type: 'term', term: termKey, label: termLabel, subcategoryLabel: subInfo.label, categoryLabel: catConfig.label }
+                    });
+                }
+            }
+        }
+    }
+  }
+  
+  return paths;
+}
+
+const { category, subcategory, slug } = Astro.params;
+const { type, post, term, label, subcategoryLabel, categoryLabel } = Astro.props;
+
+// Prepare data based on type
+let Content = null;
+let displayPosts = [];
+let sidebarPosts = [];
+let pageTitle = '';
+
+// Get all posts for sidebar/list logic
+const allPosts = await getCollection(category as any);
+
+if (type === 'post') {
+    // Render Article
+    const rendered = await post.render();
+    Content = rendered.Content;
+    pageTitle = post.data.title;
+    
+    // Sidebar: Level 2 sidebar
+    sidebarPosts = allPosts
+        .filter(p => p.data.subcategory === subcategory && !p.data.term)
+        .sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+} else if (type === 'term') {
+    // Render Term List
+    pageTitle = `${label} - ${subcategoryLabel}`;
+    
+    displayPosts = allPosts
+        .filter(p => p.data.subcategory === subcategory && p.data.term === term)
+        .sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+        
+    // Transform for display
+    displayPosts = displayPosts.map(p => ({
+        ...p,
+        link: `/${category}/${subcategory}/${term}/${p.slug.split('/').pop()}`
+    }));
+    
+    // Sidebar: Show posts in this term
+    sidebarPosts = displayPosts;
+}
+
+---
+
+<Layout 
+	title={pageTitle} 
+	activeCategory={category} 
+	activeSubcategory={subcategory}
+    activeTerm={term}
+	sidebarPosts={sidebarPosts}
+	activeSlug={slug}
+>
+    {type === 'post' ? (
+        <article>
+            <header class="article-header">
+                <h1>{post.data.title}</h1>
+                <p class="meta">
+                    <time>{new Date(post.data.date).toLocaleDateString()}</time>
+                </p>
+            </header>
+            <div class="prose">
+                <Content />
+            </div>
+        </article>
+    ) : (
+        <div class="term-list">
+            <header class="sub-header">
+                <h1>{label}</h1>
+                <p class="breadcrumb">{categoryLabel} / {subcategoryLabel} / {label}</p>
+            </header>
+
+            <div class="post-list">
+                {displayPosts.map(item => (
+                    <article class="post-preview">
+                        <h2><a href={item.link}>{item.data.title}</a></h2>
+                        {item.data.date && <time>{new Date(item.data.date).toLocaleDateString()}</time>}
+                        {item.data.description && <p>{item.data.description}</p>}
+                    </article>
+                ))}
+                
+                {displayPosts.length === 0 && (
+                    <p>该分类下暂无文章。</p>
+                )}
+            </div>
+        </div>
+    )}
+</Layout>
+
+<style>
+    /* Article Styles */
+	.article-header {
+		margin-bottom: 2rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		padding-bottom: 1rem;
+	}
+	
+	.meta {
+		color: #94a3b8;
+		font-size: 0.9rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+	}
+
+    /* List Styles */
+	.sub-header {
+		margin-bottom: 3rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		padding-bottom: 1rem;
+	}
+
+	.breadcrumb {
+		color: #94a3b8;
+		font-size: 0.9rem;
+		margin-top: 0.5rem;
+	}
+
+	.post-preview {
+		margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #1a1a1a;
+        border-radius: 8px;
+        transition: transform 0.2s, background 0.2s;
+        border: 1px solid transparent;
+	}
+
+    .post-preview:hover {
+        transform: translateY(-2px);
+        background: #222222;
+        border-color: rgba(168, 85, 247, 0.3);
+    }
+	
+	.post-preview h2 {
+		margin-bottom: 0.5rem;
+		font-size: 1.4rem;
+        margin-top: 0;
+	}
+
+	.post-preview a {
+		text-decoration: none;
+		color: #ffffff;
+        transition: color 0.2s;
+	}
+
+	.post-preview a:hover {
+		color: #a855f7;
+	}
+	
+	.post-preview time {
+		color: #cccccc;
+		font-size: 0.85rem;
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+    
+    .post-preview p {
+        color: #cbd5e1;
+        margin-bottom: 0;
+    }
+    
+    /* Prose Overrides for Dark Mode */
+    .prose {
+        color: #e2e8f0;
+        line-height: 1.8;
+        background: #000000;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+    .prose h1, .prose h3 {
+        color: #fff;
+    }
+    .prose h2 {
+        color: #fff;
+        background: #1a1a1a;
+        padding: 0.5rem 0.75rem;
+        border-left: 4px solid #a855f7;
+        border-radius: 4px;
+        margin: 1.5rem 0;
+    }
+    .prose a {
+        color: #a855f7;
+    }
+</style>

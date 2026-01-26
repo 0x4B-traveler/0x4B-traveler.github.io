@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+// Get latest posts from all categories
+const computerPosts = await getCollection('computer');
+const readingPosts = await getCollection('reading');
+const lifePosts = await getCollection('life');
+
+const allPosts = [
+    ...computerPosts.map(p => ({ ...p, category: 'computer' })), 
+    ...readingPosts.map(p => ({ ...p, category: 'reading' })), 
+    ...lifePosts.map(p => ({ ...p, category: 'life' }))
+];
+
+const sortedPosts = allPosts.sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()).slice(0, 5);
+---
+
+<Layout title="My Blog">
+	<section class="intro">
+		<h1>Welcome</h1>
+		<p>这是我的个人博客，记录关于计算机、读书和生活的思考。</p>
+	</section>
+
+	<section class="latest">
+		<h2>Latest Posts</h2>
+		<ul class="post-list">
+			{sortedPosts.map(post => (
+				<li>
+					<span class="date">{new Date(post.data.date).toLocaleDateString()}</span>
+					<span class="category">[{post.category}]</span>
+					<a href={`/${post.category}/${post.slug}`} class="title">{post.data.title}</a>
+				</li>
+			))}
+		</ul>
+	</section>
+</Layout>
+
+<style>
+	.intro {
+		margin-bottom: 3rem;
+		text-align: center;
+		padding: 2rem;
+		background: #AAAAAA;
+		border-radius: 8px;
+	}
+
+	.post-list {
+		list-style: none;
+		padding: 0;
+	}
+	
+	.post-list li {
+		display: flex;
+		align-items: baseline;
+		margin-bottom: 1rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px dashed #eee;
+	}
+	
+	.date {
+		min-width: 100px;
+		color: #666;
+		font-family: monospace;
+		font-size: 0.9rem;
+	}
+
+	.category {
+		min-width: 100px;
+		color: #999;
+		font-size: 0.85rem;
+		margin-right: 1rem;
+	}
+	
+	.title {
+		font-weight: 500;
+	}
+	
+	@media (max-width: 600px) {
+		.post-list li {
+			flex-direction: column;
+		}
+		.date, .category {
+			margin-bottom: 0.25rem;
+		}
+	}
+</style>

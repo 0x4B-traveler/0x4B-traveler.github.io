@@ -1,0 +1,409 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import { navConfig } from '../config/nav';
+
+export interface Props {
+	title: string;
+	activeCategory?: 'computer' | 'reading' | 'life';
+	activeSubcategory?: string;
+	activeTerm?: string; // 新增
+	sidebarPosts?: any[];
+	activeSlug?: string;
+}
+
+const { title, activeCategory, activeSubcategory, activeTerm, sidebarPosts = [], activeSlug } = Astro.props;
+
+const navItems = [
+	{ label: '首页', href: '/', id: 'home' },
+	{ label: '计算机', href: '/computer', id: 'computer' },
+	{ label: '读书', href: '/reading', id: 'reading' },
+	{ label: '生活', href: '/life', id: 'life' },
+];
+
+const subNavItems = activeCategory && navConfig[activeCategory] 
+	? Object.entries(navConfig[activeCategory].subcategories).map(([slug, info]) => ({
+		label: info.label,
+		href: `/${activeCategory}/${slug}`,
+		slug: slug
+	}))
+	: [];
+
+const termNavItems = activeCategory && activeSubcategory && navConfig[activeCategory]?.subcategories[activeSubcategory]?.terms
+	? Object.entries(navConfig[activeCategory].subcategories[activeSubcategory].terms).map(([slug, label]) => ({
+		label: label,
+		href: `/${activeCategory}/${activeSubcategory}/${slug}`,
+		slug: slug
+	}))
+	: [];
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="My Minimal Blog">
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<div class="stars"></div>
+		<div class="stars2"></div>
+		<div class="stars3"></div>
+		
+		<header>
+			<div class="header-main">
+				<nav>
+					<div class="logo">
+						<a href="/">My Blog</a>
+					</div>
+					<ul class="nav-links">
+						{navItems.map(item => (
+							<li>
+								<a 
+									href={item.href} 
+									class={activeCategory === item.id || (item.id === 'home' && !activeCategory) ? 'active' : ''}
+								>
+									{item.label}
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			</div>
+			
+			{subNavItems.length > 0 && (
+				<div class="header-sub">
+					<nav>
+						<ul class="sub-nav-links">
+							{subNavItems.map(item => (
+								<li>
+									<a 
+										href={item.href}
+										class={activeSubcategory === item.slug ? 'active' : ''}
+									>
+										{item.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</nav>
+				</div>
+			)}
+			
+			{termNavItems.length > 0 && (
+				<div class="header-term">
+					<nav>
+						<ul class="term-nav-links">
+							{termNavItems.map(item => (
+								<li>
+									<a 
+										href={item.href}
+										class={activeTerm === item.slug ? 'active' : ''}
+									>
+										{item.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</nav>
+				</div>
+			)}
+		</header>
+		
+		<div class="container">
+			{activeCategory && activeSubcategory && (
+				<Sidebar 
+					activeCategory={activeCategory}
+					activeSubcategory={activeSubcategory} 
+					activeTerm={activeTerm}
+					posts={sidebarPosts} 
+					activeSlug={activeSlug}
+				/>
+			)}
+			<main class={activeCategory ? 'with-sidebar' : ''}>
+				<div class="content-wrapper">
+					<slot />
+				</div>
+			</main>
+		</div>
+
+		<footer>
+			&copy; {new Date().getFullYear()} My Blog. Built with Astro.
+		</footer>
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+		--color-bg: #050505;
+		--color-text: #ffffff;
+		--color-dim: #cccccc;
+		--color-link: #a855f7;
+		--color-link-hover: #d8b4fe;
+		--color-border: rgba(255, 255, 255, 0.1);
+		--color-header-bg: rgba(5, 5, 5, 0.8);
+		--color-card-bg: rgba(20, 20, 20, 0.6);
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	html {
+		font-family: var(--font-body);
+		background-color: var(--color-bg);
+		color: var(--color-text);
+		line-height: 1.6;
+		overflow-x: hidden;
+	}
+
+	body {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+		position: relative;
+	}
+
+	/* Stars Animation */
+	.stars, .stars2, .stars3 {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		z-index: -1;
+	}
+	
+	.stars {
+		background: transparent url('data:image/svg+xml;utf8,%3Csvg%20width%3D%222%22%20height%3D%222%22%20viewBox%3D%220%200%202%202%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22white%22%20opacity%3D%220.8%22/%3E%3C/svg%3E') repeat;
+		background-size: 200px 200px;
+		animation: move-stars 100s linear infinite;
+		opacity: 0.5;
+	}
+	
+	.stars2 {
+		background: transparent url('data:image/svg+xml;utf8,%3Csvg%20width%3D%224%22%20height%3D%224%22%20viewBox%3D%220%200%204%204%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%222%22%20cy%3D%222%22%20r%3D%221.5%22%20fill%3D%22white%22%20opacity%3D%220.6%22/%3E%3C/svg%3E') repeat;
+		background-size: 300px 300px;
+		animation: move-stars 150s linear infinite;
+		opacity: 0.4;
+	}
+	
+	.stars3 {
+		background: transparent url('data:image/svg+xml;utf8,%3Csvg%20width%3D%226%22%20height%3D%226%22%20viewBox%3D%220%200%206%206%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%223%22%20cy%3D%223%22%20r%3D%222%22%20fill%3D%22white%22%20opacity%3D%220.4%22/%3E%3C/svg%3E') repeat;
+		background-size: 500px 500px;
+		animation: move-stars 200s linear infinite;
+		opacity: 0.3;
+	}
+
+	@keyframes move-stars {
+		from { background-position: 0 0; }
+		to { background-position: 1000px 1000px; }
+	}
+
+	/* Header & Nav */
+	header {
+		background: var(--color-header-bg);
+		backdrop-filter: blur(10px);
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		border-bottom: 1px solid var(--color-border);
+		box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+	}
+
+	.header-main {
+		padding: 1rem 2rem;
+	}
+
+	.header-sub {
+		background: linear-gradient(90deg, rgba(20, 20, 20, 0.95), rgba(40, 40, 40, 0.95));
+		backdrop-filter: blur(10px);
+		padding: 0.5rem 2rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+		font-size: 0.95rem;
+	}
+
+	.header-term {
+		background: linear-gradient(90deg, rgba(30, 30, 30, 0.95), rgba(50, 50, 50, 0.95));
+		backdrop-filter: blur(10px);
+		padding: 0.4rem 2rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+		font-size: 0.9rem;
+	}
+
+	nav {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.logo a {
+		font-weight: bold;
+		font-size: 1.5rem;
+		color: #fff;
+		text-decoration: none;
+		text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+	}
+
+	.nav-links {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		gap: 2rem;
+	}
+
+	.nav-links a {
+		color: var(--color-dim);
+		text-decoration: none;
+		font-size: 1rem;
+		padding: 0.5rem 0;
+		position: relative;
+		transition: all 0.3s ease;
+	}
+
+	.nav-links a:hover, .nav-links a.active {
+		color: #fff;
+		text-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+	}
+	
+	.nav-links a.active::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		background: linear-gradient(90deg, #a855f7, #3b82f6);
+		box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+	}
+
+	.sub-nav-links {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		gap: 1.5rem;
+		justify-content: center;
+	}
+
+	.sub-nav-links a {
+		color: #94a3b8;
+		text-decoration: none;
+		transition: all 0.3s;
+		font-weight: 500;
+	}
+
+	.sub-nav-links a:hover, .sub-nav-links a.active {
+		color: #fff;
+		text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+	}
+	
+	.sub-nav-links a.active {
+		border-bottom: 2px solid var(--color-link);
+	}
+
+	/* Term Nav Links (Level 3) */
+	.term-nav-links {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		gap: 1.5rem;
+		justify-content: center;
+	}
+
+	.term-nav-links a {
+		color: #64748b;
+		text-decoration: none;
+		transition: all 0.3s;
+		font-weight: 400;
+	}
+
+	.term-nav-links a:hover, .term-nav-links a.active {
+		color: #fff;
+		text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+	}
+
+	.term-nav-links a.active {
+		border-bottom: 1px solid var(--color-link);
+	}
+
+	.container {
+		display: flex;
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+		width: 100%;
+		flex: 1;
+	}
+
+	main {
+		flex: 1;
+		width: 100%;
+	}
+
+	main.with-sidebar {
+		width: calc(100% - 280px); /* 250px sidebar + 30px margin */
+	}
+	
+	/* Content Wrapper for readability */
+	.content-wrapper {
+		background: var(--color-card-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		padding: 2rem;
+		backdrop-filter: blur(5px);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+	}
+
+	footer {
+		text-align: center;
+		padding: 2rem;
+		color: var(--color-dim);
+		border-top: 1px solid var(--color-border);
+		background: rgba(0, 0, 0, 0.3);
+		margin-top: auto;
+	}
+	
+	/* Typography updates for dark mode */
+	h1, h2, h3, h4, h5, h6 {
+		color: #fff;
+	}
+	
+	a {
+		color: var(--color-link);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+	
+	a:hover {
+		color: var(--color-link-hover);
+	}
+	
+	code {
+		font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
+			Bitstream Vera Sans Mono, Courier New, monospace;
+		background: rgba(0, 0, 0, 0.3);
+		padding: 0.2em 0.4em;
+		border-radius: 4px;
+		color: #fca5a5;
+	}
+	
+	pre {
+		background: #0d1117 !important;
+		padding: 1.5rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		overflow-x: auto;
+	}
+</style>
