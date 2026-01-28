@@ -1,6 +1,4 @@
 ---
-import { sidebarConfig } from '../config/nav';
-
 export interface Props {
 	activeCategory?: string;
 	activeSubcategory?: string;
@@ -11,27 +9,9 @@ export interface Props {
 
 const { activeCategory, activeSubcategory, activeTerm, activeSlug, posts = [] } = Astro.props;
 
-// 优先使用手动配置的侧边栏
-// 如果有 Term，优先查找 Term 的配置；否则查找 Subcategory 的配置
-let manualSidebar = null;
-if (activeCategory && activeSubcategory) {
-	if (activeTerm) {
-		manualSidebar = sidebarConfig[`${activeCategory}/${activeSubcategory}/${activeTerm}`];
-	}
-	// 如果 Term 没配置，或者是 Level 2 页面，尝试 Subcategory 配置
-	// 注意：如果是在 Term 页面但没有 Term 配置，是否回退到 Subcategory 配置？
-	// 之前的逻辑是 "侧边栏只展示类似于目录"，所以如果 Term 没有特定配置，
-	// 可能应该展示 Term 的自动列表（即传入的 posts），而不是 Subcategory 的手动列表。
-	// 所以只有当 manualSidebar 为 null 且 posts 为空时，才考虑回退？
-	// 或者严格按照 Key 匹配。
-	
-	if (!manualSidebar && !activeTerm) {
-		manualSidebar = sidebarConfig[`${activeCategory}/${activeSubcategory}`];
-	}
-}
-
-// 如果没有手动配置，则使用传入的 posts
-const displayItems = manualSidebar || posts.map(post => ({
+// 自动扫描：完全依赖传入的 posts 数组
+// 路由文件已经根据 subcategory 和 term 字段自动筛选和排序了文章
+const displayItems = posts.map(post => ({
 	title: post.title || post.data.title,
 	link: post.link || `/${activeCategory}/${activeSubcategory}/${post.slug.split('/').pop()}`
 }));

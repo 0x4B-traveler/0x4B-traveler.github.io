@@ -1,7 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { navConfig, sidebarConfig } from '../../../config/nav';
+import { navConfig } from '../../../config/nav';
 
 export async function getStaticPaths() {
   const paths = [];
@@ -26,9 +26,8 @@ const posts = await getCollection(category as any);
 const filteredPosts = posts.filter(post => post.data.subcategory === subcategory);
 const sortedPosts = filteredPosts.sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
 
-// 检查是否有手动配置的侧边栏
-const manualSidebar = sidebarConfig[`${category}/${subcategory}`];
-const displayItems = manualSidebar || sortedPosts.map(post => ({
+// 自动扫描：直接使用排序后的文章列表
+const displayItems = sortedPosts.map(post => ({
 	title: post.data.title,
 	link: post.data.term 
 		? `/${category}/${subcategory}/${post.data.term}/${post.slug.split('/').pop()}` 
