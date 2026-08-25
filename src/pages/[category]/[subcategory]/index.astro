@@ -24,7 +24,12 @@ const { categoryLabel, subcategoryLabel } = Astro.props;
 // 获取该子分类下的文章
 const posts = await getCollection(category as any);
 const filteredPosts = posts.filter(post => post.data.subcategory === subcategory);
-const sortedPosts = filteredPosts.sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+const sortedPosts = filteredPosts.sort((a, b) => {
+	if (category === 'daily') {
+		return new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf();
+	}
+	return (a.data.order || 100) - (b.data.order || 100);
+});
 
 // 自动扫描：直接使用排序后的文章列表
 const displayItems = sortedPosts.map(post => ({

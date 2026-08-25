@@ -6,11 +6,13 @@ import { getCollection } from 'astro:content';
 const computerPosts = await getCollection('computer');
 const readingPosts = await getCollection('reading');
 const lifePosts = await getCollection('life');
+const dailyPosts = await getCollection('daily');
 
 const allPosts = [
     ...computerPosts.map(p => ({ ...p, category: 'computer' })), 
     ...readingPosts.map(p => ({ ...p, category: 'reading' })), 
-    ...lifePosts.map(p => ({ ...p, category: 'life' }))
+    ...lifePosts.map(p => ({ ...p, category: 'life' })),
+    ...dailyPosts.map(p => ({ ...p, category: 'daily' }))
 ];
 
 const sortedPosts = allPosts.sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()).slice(0, 5);

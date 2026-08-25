@@ -47,6 +47,12 @@ export const navConfig = {
       journal: { label: '随笔' },
       travel: { label: '旅行' }
     }
+  },
+  daily: {
+    label: '每日记录',
+    subcategories: {
+      log: { label: '日志' }
+    }
   }
 };
 

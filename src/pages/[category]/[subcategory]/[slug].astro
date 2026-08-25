@@ -68,14 +68,18 @@ if (type === 'post') {
     // Sidebar: Level 2 sidebar
     sidebarPosts = allPosts
         .filter(p => p.data.subcategory === subcategory && !p.data.term)
-        .sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+        .sort((a, b) => (category === 'daily'
+            ? new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
+            : (a.data.order || 100) - (b.data.order || 100)));
 } else if (type === 'term') {
     // Render Term List
     pageTitle = `${label} - ${subcategoryLabel}`;
     
     displayPosts = allPosts
         .filter(p => p.data.subcategory === subcategory && p.data.term === term)
-        .sort((a, b) => (a.data.order || 100) - (b.data.order || 100));
+        .sort((a, b) => (category === 'daily'
+            ? new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
+            : (a.data.order || 100) - (b.data.order || 100)));
         
     // Transform for display
     displayPosts = displayPosts.map(p => ({

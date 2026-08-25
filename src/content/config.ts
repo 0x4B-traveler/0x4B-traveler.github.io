@@ -15,4 +15,5 @@ export const collections = {
 	'computer': blogCollection,
 	'reading': blogCollection,
 	'life': blogCollection,
+	'daily': blogCollection,
 };
