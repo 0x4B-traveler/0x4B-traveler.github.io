@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="940" viewBox="0 0 1200 940" role="img" aria-labelledby="title desc">
+  <title id="title">MySQL 查询与更新语句执行流程</title>
+  <desc id="desc">SQL 从客户端进入 Server 层，经过连接器、解析与预处理、优化器和执行器，再由 InnoDB 读取或修改数据。更新分支还会写入 undo log、redo log 和 binlog，并完成两阶段提交。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#111b31"/></linearGradient>
+    <linearGradient id="server" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#17233b"/><stop offset="1" stop-color="#14283d"/></linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#162c32"/><stop offset="1" stop-color="#183047"/></linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8ba3c7"/></marker>
+    <marker id="queryArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#65d6ad"/></marker>
+    <marker id="updateArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#ffb86b"/></marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity=".25"/></filter>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#e7eefb}.caption{fill:#91a2bd;font-size:18px}.label{font-size:23px;font-weight:600}.sub{fill:#a9b7cb;font-size:17px}.section{fill:#8ba3c7;font-size:17px;font-weight:600;letter-spacing:2px}.node{fill:#1a2841;stroke:#3c5273;stroke-width:2}.query{fill:#153a35;stroke:#3f9d80;stroke-width:2}.update{fill:#3b2a22;stroke:#c78447;stroke-width:2}.log{fill:#272647;stroke:#6e6aab;stroke-width:2}.flow{fill:none;stroke:#8ba3c7;stroke-width:3;marker-end:url(#arrow)}.qflow{fill:none;stroke:#65d6ad;stroke-width:3;marker-end:url(#queryArrow)}.uflow{fill:none;stroke:#ffb86b;stroke-width:3;marker-end:url(#updateArrow)}
+    </style>
+  </defs>
+  <rect width="1200" height="940" rx="28" fill="url(#bg)"/>
+  <text x="60" y="62" font-size="31" font-weight="700">MySQL 查询与更新语句执行流程</text>
+  <text x="60" y="94" class="caption">Server 层负责理解和执行 SQL，存储引擎负责数据读写与事务能力</text>
+  <rect x="38" y="122" width="1124" height="408" rx="22" fill="url(#server)" stroke="#2d4262"/>
+  <text x="66" y="157" class="section">SERVER 层</text>
+  <g filter="url(#shadow)">
+    <rect x="78" y="190" width="174" height="84" rx="15" class="node"/><text x="165" y="225" text-anchor="middle" class="label">客户端</text><text x="165" y="252" text-anchor="middle" class="sub">发送 SQL</text>
+    <rect x="318" y="190" width="174" height="84" rx="15" class="node"/><text x="405" y="225" text-anchor="middle" class="label">连接器</text><text x="405" y="252" text-anchor="middle" class="sub">认证 · 连接管理</text>
+    <rect x="558" y="190" width="218" height="84" rx="15" class="node"/><text x="667" y="225" text-anchor="middle" class="label">解析与预处理</text><text x="667" y="252" text-anchor="middle" class="sub">语法 · 对象 · 权限</text>
+    <rect x="842" y="190" width="174" height="84" rx="15" class="node"/><text x="929" y="225" text-anchor="middle" class="label">优化器</text><text x="929" y="252" text-anchor="middle" class="sub">选择执行计划</text>
+    <rect x="842" y="350" width="174" height="84" rx="15" class="node"/><text x="929" y="385" text-anchor="middle" class="label">执行器</text><text x="929" y="412" text-anchor="middle" class="sub">调用引擎接口</text>
+  </g>
+  <path d="M252 232 H318" class="flow"/><path d="M492 232 H558" class="flow"/><path d="M776 232 H842" class="flow"/><path d="M929 274 V350" class="flow"/>
+  <rect x="38" y="554" width="1124" height="330" rx="22" fill="url(#engine)" stroke="#315368"/>
+  <text x="66" y="589" class="section">INNODB 存储引擎层</text>
+  <rect x="478" y="620" width="244" height="86" rx="15" class="node" filter="url(#shadow)"/><text x="600" y="655" text-anchor="middle" class="label">访问数据</text><text x="600" y="682" text-anchor="middle" class="sub">Buffer Pool / 磁盘</text>
+  <path d="M929 434 V492 H600 V620" class="flow"/>
+  <rect x="88" y="754" width="286" height="86" rx="15" class="query"/><text x="231" y="789" text-anchor="middle" class="label">查询分支</text><text x="231" y="816" text-anchor="middle" class="sub">读取记录 → 返回结果</text><path d="M478 663 H420 Q400 663 400 683 V797 H374" class="qflow"/>
+  <rect x="444" y="754" width="312" height="86" rx="15" class="update"/><text x="600" y="789" text-anchor="middle" class="label">更新数据页</text><text x="600" y="816" text-anchor="middle" class="sub">undo log · 产生脏页</text><path d="M600 706 V754" class="uflow"/>
+  <rect x="826" y="626" width="276" height="214" rx="15" class="log"/><text x="964" y="663" text-anchor="middle" class="label">两阶段提交</text><text x="856" y="704" class="sub">1. redo log prepare</text><text x="856" y="742" class="sub">2. Server 层写 binlog</text><text x="856" y="780" class="sub">3. redo log commit</text><text x="856" y="818" class="sub">4. 返回执行结果</text><path d="M756 797 H826" class="uflow"/>
+  <rect x="64" y="898" width="18" height="5" rx="2" fill="#65d6ad"/><text x="94" y="908" class="caption">查询路径</text><rect x="216" y="898" width="18" height="5" rx="2" fill="#ffb86b"/><text x="246" y="908" class="caption">更新路径</text>
+</svg>
