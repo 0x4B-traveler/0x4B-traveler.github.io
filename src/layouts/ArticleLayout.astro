@@ -1,0 +1,44 @@
+---
+import Layout from './Layout.astro';
+import PostCard from '../components/PostCard.astro';
+import { domainLabel, formatDate, statusLabel } from '../lib/content';
+
+const { post, collection = 'computer', relatedPosts = [] } = Astro.props;
+const { Content, headings = [] } = await post.render();
+const toc = headings.filter((heading: any) => heading.depth === 2 || heading.depth === 3);
+const isReading = collection === 'reading';
+---
+
+<Layout title={post.data.title} description={post.data.description} activeNav={isReading ? 'reading' : 'knowledge'} socialImage={null}>
+	<div class="article-shell">
+		<article id="top" class:list={['article', { reading: isReading }]}>
+			<header class="article-hero">
+				<a class="back-link" href={isReading ? '/reading' : '/knowledge'}>← 返回{isReading ? '读书' : '知识库'}</a>
+				<div class="article-kicker"><span>{domainLabel(post.data.domain)}</span><span>·</span><span class:list={['state', post.data.status]}>{statusLabel(post.data.status)}</span></div>
+				<h1>{post.data.title}</h1>
+				<p>{post.data.description}</p>
+				<div class="article-meta"><span>发布于 {formatDate(post.data.date)}</span>{post.data.updated && <span>更新于 {formatDate(post.data.updated)}</span>}<span>约 {Math.max(1, Math.ceil(post.body.length / 500))} 分钟阅读</span></div>
+				<div class="article-tags">{post.data.tags.map((tag: string) => <a href={`${isReading ? '/reading' : '/knowledge'}?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}</div>
+			</header>
+
+			{toc.length > 0 && <details class="mobile-toc"><summary>文章目录</summary><ol>{toc.map((heading: any) => <li class={`depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol></details>}
+
+			<div class="prose"><Content /></div>
+
+			{post.data.updates.length > 0 && <section class="article-updates"><p class="section-label">CHANGELOG</p><h2>更新记录</h2>{post.data.updates.map((update: any) => <div><time>{formatDate(update.date)}</time><p>{update.summary}</p></div>)}</section>}
+
+			<section class="knowledge-relations">
+				<div><p class="section-label">KNOWLEDGE RELATIONS</p><h2>知识关系</h2></div>
+				{relatedPosts.length ? <div class="related-grid">{relatedPosts.map((item: any) => <PostCard post={item.post} collection={item.collection} compact />)}</div> : <p class="relation-empty">当前文章还没有确认的显式关系。随着知识库增长，相关内容会在这里连接起来。</p>}
+			</section>
+		</article>
+
+		{toc.length > 0 && <aside class="article-toc"><span>本文目录</span><ol>{toc.map((heading: any) => <li class={`depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol><a class="to-top" href="#top">↑ 回到顶部</a></aside>}
+	</div>
+</Layout>
+
+<style>
+	.article-shell{display:grid;grid-template-columns:minmax(0,760px) 220px;gap:5rem;justify-content:center;padding:5rem 0 8rem}.article-hero{padding-bottom:2.5rem;border-bottom:1px solid var(--border);margin-bottom:3.5rem}.back-link{display:inline-block;color:var(--text-muted);font-size:.78rem;margin-bottom:2rem}.back-link:hover{color:var(--accent-soft)}.article-kicker{display:flex;gap:.65rem;align-items:center;font-size:.72rem;color:var(--text-muted);margin-bottom:1rem}.article-kicker>span:first-child{font-weight:700;color:var(--accent-soft)}.state:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:.4rem}.state.settled:before{background:#55c99c}.article-hero h1{font-size:clamp(2.5rem,5vw,4.5rem);line-height:1.08;letter-spacing:-.052em;margin:0}.article-hero>p{font-size:1.05rem;line-height:1.8;color:var(--text-secondary);margin:1.5rem 0}.article-meta{display:flex;gap:1.1rem;flex-wrap:wrap;color:var(--text-muted);font-size:.72rem}.article-tags{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.2rem}.article-tags a{padding:.32rem .6rem;border:1px solid var(--border);border-radius:7px;font:500 .68rem var(--font-mono);color:var(--text-muted)}.prose{font-family:var(--font-reading);font-size:1.04rem;line-height:2;color:var(--text-secondary)}.prose :global(h2),.prose :global(h3),.prose :global(h4){font-family:var(--font-ui);color:var(--text);letter-spacing:-.02em;scroll-margin-top:100px}.prose :global(h2){font-size:1.7rem;margin:3.5rem 0 1.2rem;padding-top:.5rem}.prose :global(h3){font-size:1.28rem;margin:2.5rem 0 .8rem}.prose :global(p){margin:1.2rem 0}.prose :global(a){text-decoration:underline;text-underline-offset:3px}.prose :global(blockquote){margin:2rem 0;padding:1rem 1.4rem;border-left:2px solid var(--accent);background:var(--accent-wash);color:var(--text);border-radius:0 10px 10px 0}.prose :global(code){font-family:var(--font-mono);font-size:.86em;padding:.18em .38em;border-radius:5px;background:var(--surface-strong);color:var(--accent-soft)}.prose :global(pre){overflow:auto;padding:1.35rem;border:1px solid var(--border);border-radius:13px;background:#070b14}.prose :global(pre code){padding:0;background:transparent;color:#d7deeb}.prose :global(img){max-width:100%;border-radius:13px}.prose :global(table){width:100%;border-collapse:collapse;font-family:var(--font-ui);font-size:.88rem}.prose :global(th),.prose :global(td){padding:.75rem;border:1px solid var(--border);text-align:left}.prose :global(th){background:var(--surface)}.article-toc{position:sticky;top:110px;height:max-content;padding-left:1.2rem;border-left:1px solid var(--border)}.article-toc>span{font-size:.7rem;color:var(--text-muted);letter-spacing:.15em}.article-toc ol,.mobile-toc ol{list-style:none;padding:0;margin:1rem 0}.article-toc li{margin:.65rem 0}.article-toc li.depth-3{padding-left:.8rem}.article-toc a{font-size:.74rem;color:var(--text-muted)}.article-toc a:hover{color:var(--text)}.to-top{display:inline-block;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);width:100%}.mobile-toc{display:none}.section-label{font:700 .68rem var(--font-mono);letter-spacing:.17em;color:var(--accent-soft);margin:0}.article-updates,.knowledge-relations{margin-top:5rem;padding-top:2.5rem;border-top:1px solid var(--border)}.article-updates h2,.knowledge-relations h2{margin:.45rem 0 1.5rem;font-size:1.65rem}.article-updates>div{display:grid;grid-template-columns:130px 1fr;border-top:1px solid var(--border);padding:1rem 0;color:var(--text-secondary);font-size:.85rem}.article-updates time{color:var(--text-muted)}.article-updates p{margin:0}.related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}.relation-empty{padding:1.25rem;border:1px dashed var(--border-strong);border-radius:12px;color:var(--text-muted);font-size:.85rem}.reading .prose{font-size:1.08rem}
+	@media(max-width:980px){.article-shell{grid-template-columns:minmax(0,760px)}.article-toc{display:none}.mobile-toc{display:block;margin:-1.5rem 0 2.5rem;padding:1rem;border:1px solid var(--border);border-radius:10px;color:var(--text-secondary)}.mobile-toc summary{cursor:pointer;color:var(--text);font-weight:700}.mobile-toc li.depth-3{padding-left:1rem}.mobile-toc a{font-size:.8rem;color:var(--text-muted)}}
+	@media(max-width:600px){.article-shell{padding:3rem 0 5rem}.article-hero h1{font-size:2.55rem}.article-meta{flex-direction:column;gap:.35rem}.related-grid{grid-template-columns:1fr}.article-updates>div{grid-template-columns:1fr;gap:.3rem}.prose{font-size:1rem}}
+</style>

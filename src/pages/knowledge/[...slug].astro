@@ -1,0 +1,19 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getPublishedComputerPosts } from '../../lib/content';
+
+export async function getStaticPaths() {
+	const posts = await getPublishedComputerPosts();
+	return posts.map((post) => ({ params: { slug: post.slug }, props: { post, posts } }));
+}
+
+const { post, posts } = Astro.props;
+const explicit = new Set(post.data.related);
+const relatedPosts = posts
+	.filter((candidate: any) => candidate.slug !== post.slug)
+	.map((candidate: any) => ({ post: candidate, collection: 'computer', score: (explicit.has(candidate.slug) ? 10 : 0) + candidate.data.tags.filter((tag: string) => post.data.tags.includes(tag)).length + (candidate.data.domain === post.data.domain ? 1 : 0) }))
+	.filter((candidate: any) => candidate.score > 0)
+	.sort((a: any, b: any) => b.score - a.score)
+	.slice(0, 2);
+---
+<ArticleLayout post={post} collection="computer" relatedPosts={relatedPosts} />

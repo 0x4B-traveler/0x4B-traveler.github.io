@@ -2,6 +2,10 @@
 title: Vue 框架学习指南
 date: 2026-01-28
 description: Vue 框架的完整学习路线
+domain: programming-language
+tags: [Vue, JavaScript, 前端]
+status: growing
+draft: false
 subcategory: frontend
 term: vue
 order: 1

@@ -2,6 +2,10 @@
 title: 数据库系统学习
 date: 2026-01-28
 description: 数据库设计、优化与实践
+domain: database
+tags: [数据库, SQL, 事务, 索引]
+status: growing
+draft: false
 subcategory: backend
 term: database
 order: 1

@@ -2,6 +2,10 @@
 title: 前端性能优化指南
 date: 2026-01-28
 description: 前端应用性能优化的方法与实践
+domain: programming-language
+tags: [前端, 性能优化, Web]
+status: growing
+draft: false
 subcategory: frontend
 term: performance
 order: 1

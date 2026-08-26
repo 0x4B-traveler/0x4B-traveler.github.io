@@ -1,89 +1,97 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getCollection } from 'astro:content';
+import { getPublishedComputerPosts, getPublishedReadingPosts, postHref, domainLabel, statusLabel } from '../lib/content';
 
-// Get latest posts from all categories
-const computerPosts = await getCollection('computer');
-const readingPosts = await getCollection('reading');
-const lifePosts = await getCollection('life');
-const dailyPosts = await getCollection('daily');
-
+const computerPosts = await getPublishedComputerPosts();
+const readingPosts = await getPublishedReadingPosts();
 const allPosts = [
-    ...computerPosts.map(p => ({ ...p, category: 'computer' })), 
-    ...readingPosts.map(p => ({ ...p, category: 'reading' })), 
-    ...lifePosts.map(p => ({ ...p, category: 'life' })),
-    ...dailyPosts.map(p => ({ ...p, category: 'daily' }))
+	...computerPosts.map((post) => ({ ...post, type: 'tech', collection: 'computer' })),
+	...readingPosts.map((post) => ({ ...post, type: 'reading', collection: 'reading' })),
 ];
-
-const sortedPosts = allPosts.sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()).slice(0, 5);
+const timelineEvents = allPosts.flatMap((post) => [
+	{ post, date: post.data.date, kind: 'published', summary: post.data.description },
+	...post.data.updates.map((update) => ({ post, date: update.date, kind: 'updated', summary: update.summary })),
+]).sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+const techCount = computerPosts.length;
+const readingCount = readingPosts.length;
 ---
 
-<Layout title="My Blog">
-	<section class="intro">
-		<h1>Welcome</h1>
-		<p>这是我的个人博客，记录关于计算机、读书和生活的思考。</p>
+<Layout title="马超 · 个人知识库" activeNav="home" wide>
+	<section class="home-hero">
+		<div class="hero-copy">
+			<p class="eyebrow"><span></span> LEARNING ARCHIVE · 持续更新</p>
+			<h1>把零散的学习，<br /><em>连接成可调用的知识。</em></h1>
+			<p class="hero-lead">这里记录我对数据库、云原生、编程语言与算法的理解。不是答案合集，而是一条持续生长的学习轨迹。</p>
+			<div class="hero-actions">
+				<a class="button primary" href="#timeline">查看最近沉淀 <span>↓</span></a>
+				<a class="button secondary" href="/knowledge">探索知识库 <span>↗</span></a>
+			</div>
+		</div>
+		<aside class="hero-panel" aria-label="知识库概览">
+			<div class="orbit" aria-hidden="true"><span></span><span></span><i></i></div>
+			<p>KNOWLEDGE BASE</p>
+			<strong>{allPosts.length.toString().padStart(2, '0')}</strong>
+			<span>篇公开沉淀</span>
+			<div class="hero-stats"><span><b>{techCount}</b> 技术</span><span><b>{readingCount}</b> 读书</span></div>
+		</aside>
 	</section>
 
-	<section class="latest">
-		<h2>Latest Posts</h2>
-		<ul class="post-list">
-			{sortedPosts.map(post => (
-				<li>
-					<span class="date">{new Date(post.data.date).toLocaleDateString()}</span>
-					<span class="category">[{post.category}]</span>
-					<a href={`/${post.category}/${post.slug}`} class="title">{post.data.title}</a>
-				</li>
+	<section class="timeline-section" id="timeline">
+		<div class="section-heading">
+			<div><p class="eyebrow">RECENTLY LEARNED</p><h2>最近沉淀</h2><p>沿着时间，回看知识如何一点点形成。</p></div>
+			<div class="filter-tabs" role="group" aria-label="内容筛选">
+				<button class="active" data-filter="all">全部</button>
+				<button data-filter="tech">技术</button>
+				<button data-filter="reading">读书</button>
+			</div>
+		</div>
+
+		<div class="timeline" data-timeline>
+			<div class="timeline-line" aria-hidden="true"><span></span></div>
+			{timelineEvents.map((event, index) => (
+				(() => { const post = event.post; return (
+				<article class="timeline-item reveal" data-type={post.type} style={`--delay:${Math.min(index, 5) * 70}ms`}>
+					<div class="timeline-date"><strong>{new Date(event.date).getDate().toString().padStart(2, '0')}</strong><span>{new Date(event.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' })}</span></div>
+					<div class="timeline-node" aria-hidden="true"><span></span></div>
+					<a class="timeline-card" href={postHref(post, post.collection as 'computer' | 'reading')}>
+						<div class="card-meta"><span class:list={['type-badge', post.type]}>{event.kind === 'updated' ? '文章更新' : post.type === 'tech' ? '技术沉淀' : '阅读笔记'}</span><span>{domainLabel(post.data.domain)}</span><span>·</span><span>{statusLabel(post.data.status)}</span></div>
+						<h3>{post.data.title}</h3>
+						<p>{event.summary}</p>
+						<div class="card-footer"><span class="tag">{post.data.tags.slice(0, 2).map((tag) => `#${tag}`).join(' · ')}</span><span class="read-more">阅读文章 <b>↗</b></span></div>
+					</a>
+				</article>
+				); })()
 			))}
-		</ul>
+		</div>
+		{timelineEvents.length > 10 && <button class="load-more" id="load-more" type="button">加载更多沉淀 <span>↓</span></button>}
+		<div class="timeline-end"><span></span><p>这里不是终点，知识仍在继续生长。</p><a href="/knowledge">查看全部知识 →</a></div>
 	</section>
+
+	<script>
+		const filterButtons = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+		const timelineItems = [...document.querySelectorAll<HTMLElement>('.timeline-item')];
+		const loadMore = document.querySelector<HTMLButtonElement>('#load-more');
+		let currentFilter = 'all'; let shownCount = 10;
+		const applyTimeline = () => {
+			const matching = timelineItems.filter((item) => currentFilter === 'all' || item.dataset.type === currentFilter);
+			timelineItems.forEach((item) => { item.hidden = !matching.slice(0, shownCount).includes(item); });
+			if (loadMore) loadMore.hidden = matching.length <= shownCount;
+		};
+		filterButtons.forEach((button) => button.addEventListener('click', () => {
+			filterButtons.forEach((item) => item.classList.toggle('active', item === button));
+			currentFilter = button.dataset.filter || 'all'; shownCount = 10; applyTimeline();
+		}));
+		loadMore?.addEventListener('click', () => { shownCount += 10; applyTimeline(); });
+		const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+			if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+		}), { threshold: 0.12 });
+		document.querySelectorAll('.reveal').forEach((item) => observer.observe(item));
+		applyTimeline();
+	</script>
 </Layout>
 
 <style>
-	.intro {
-		margin-bottom: 3rem;
-		text-align: center;
-		padding: 2rem;
-		background: #AAAAAA;
-		border-radius: 8px;
-	}
-
-	.post-list {
-		list-style: none;
-		padding: 0;
-	}
-	
-	.post-list li {
-		display: flex;
-		align-items: baseline;
-		margin-bottom: 1rem;
-		padding-bottom: 0.5rem;
-		border-bottom: 1px dashed #eee;
-	}
-	
-	.date {
-		min-width: 100px;
-		color: #666;
-		font-family: monospace;
-		font-size: 0.9rem;
-	}
-
-	.category {
-		min-width: 100px;
-		color: #999;
-		font-size: 0.85rem;
-		margin-right: 1rem;
-	}
-	
-	.title {
-		font-weight: 500;
-	}
-	
-	@media (max-width: 600px) {
-		.post-list li {
-			flex-direction: column;
-		}
-		.date, .category {
-			margin-bottom: 0.25rem;
-		}
-	}
+	.home-hero{min-height:620px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.72fr);align-items:center;gap:8vw;padding:7rem 0 6rem;position:relative}.home-hero:after{content:"";position:absolute;left:46%;top:18%;width:1px;height:57%;background:linear-gradient(transparent,var(--border-strong),transparent)}.hero-copy{max-width:760px}.eyebrow{margin:0 0 1.25rem;color:var(--accent-soft);font:700 .72rem/1.2 var(--font-mono);letter-spacing:.18em;text-transform:uppercase}.eyebrow span{display:inline-block;width:22px;height:1px;background:var(--accent);vertical-align:middle;margin-right:.65rem}.hero-copy h1{font-size:clamp(3.2rem,7vw,6.5rem);line-height:.98;letter-spacing:-.065em;margin:0;color:var(--text);font-weight:720}.hero-copy h1 em{font-family:var(--font-reading);font-weight:500;font-style:normal;color:transparent;background:linear-gradient(100deg,var(--accent-soft),var(--accent-2));background-clip:text}.hero-lead{max-width:630px;margin:2rem 0 0;color:var(--text-secondary);font-size:1.08rem;line-height:1.9}.hero-actions{display:flex;gap:.85rem;margin-top:2.2rem}.hero-panel{justify-self:end;width:min(100%,370px);aspect-ratio:1/1.05;padding:2.25rem;border:1px solid var(--border);border-radius:32px;background:linear-gradient(145deg,var(--surface),transparent);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:var(--shadow-lg)}.hero-panel>p{font:600 .7rem var(--font-mono);letter-spacing:.2em;color:var(--text-muted);margin:0}.hero-panel>strong{font:300 5.5rem/1 var(--font-ui);letter-spacing:-.08em;margin:.45rem 0;color:var(--text)}.hero-panel>span{color:var(--text-secondary)}.hero-stats{display:flex;gap:1.5rem;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:.82rem}.hero-stats b{color:var(--text);font-size:1rem;margin-right:.25rem}.orbit{position:absolute;width:210px;height:210px;right:-32px;top:-28px;border:1px solid var(--border-strong);border-radius:50%;animation:spin 28s linear infinite}.orbit:before,.orbit:after{content:"";position:absolute;border:1px solid var(--border);border-radius:50%;inset:28px}.orbit:after{inset:62px}.orbit span{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent);left:37px;top:22px}.orbit span+span{width:5px;height:5px;left:auto;right:15px;top:120px;background:var(--accent-2)}.orbit i{position:absolute;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));inset:0;margin:auto;box-shadow:0 0 35px color-mix(in srgb,var(--accent) 45%,transparent)}.timeline-section{padding:7rem 0}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:2rem;margin-bottom:4rem}.section-heading h2{font-size:clamp(2.2rem,4vw,3.7rem);letter-spacing:-.045em;margin:0}.section-heading>div>p:last-child{color:var(--text-secondary);margin:.75rem 0 0}.filter-tabs{display:flex;padding:.3rem;border:1px solid var(--border);border-radius:999px;background:var(--surface)}.filter-tabs button{border:0;background:transparent;color:var(--text-muted);padding:.62rem 1.1rem;border-radius:999px;cursor:pointer}.filter-tabs button.active{background:var(--surface-strong);color:var(--text);box-shadow:var(--shadow-sm)}.timeline{position:relative}.timeline-line{position:absolute;left:124px;top:16px;bottom:0;width:1px;background:var(--border)}.timeline-line span{display:block;width:100%;height:38%;background:linear-gradient(var(--accent),var(--accent-2));box-shadow:0 0 10px var(--accent)}.timeline-item{display:grid;grid-template-columns:96px 56px 1fr;align-items:start;margin-bottom:2rem;transition:opacity .5s ease var(--delay),transform .5s ease var(--delay)}.timeline-item[hidden]{display:none}.timeline-date{text-align:right;padding-top:1.35rem}.timeline-date strong{display:block;font:500 1.2rem var(--font-mono);color:var(--text)}.timeline-date span{font-size:.72rem;color:var(--text-muted)}.timeline-node{display:flex;justify-content:center;padding-top:1.75rem;position:relative}.timeline-node span{width:11px;height:11px;border:3px solid var(--page-bg);border-radius:50%;background:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 16px var(--accent);z-index:1}.timeline-card{display:block;padding:1.75rem 2rem;border:1px solid var(--border);border-radius:22px;background:color-mix(in srgb,var(--surface) 78%,transparent);color:inherit;transition:.25s ease}.timeline-card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));transform:translateY(-3px);background:var(--surface);box-shadow:var(--shadow-lg)}.card-meta{display:flex;align-items:center;gap:.7rem;color:var(--text-muted);font-size:.75rem}.type-badge{padding:.3rem .55rem;border-radius:6px;background:var(--accent-wash);color:var(--accent-soft);font-weight:700}.type-badge.reading{background:var(--amber-wash);color:var(--amber)}.timeline-card h3{margin:.95rem 0 .65rem;font-size:1.45rem;letter-spacing:-.02em}.timeline-card>p{margin:0;color:var(--text-secondary);line-height:1.8}.card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem}.tag{color:var(--text-muted);font:500 .75rem var(--font-mono)}.read-more{font-size:.8rem;color:var(--text-secondary)}.read-more b{color:var(--accent-soft);font-size:1rem}.load-more{display:flex;align-items:center;gap:.7rem;margin:2.5rem 0 2.5rem 180px;padding:.7rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-secondary);cursor:pointer}.load-more:hover{border-color:var(--accent);color:var(--text)}.load-more[hidden]{display:none}.timeline-end{margin-left:124px;border-top:1px solid var(--border);padding:2.5rem 0 0 56px;position:relative}.timeline-end>span{position:absolute;width:9px;height:9px;border:1px solid var(--text-muted);border-radius:50%;left:-4px;top:-5px;background:var(--page-bg)}.timeline-end p{color:var(--text-muted);margin:0 0 .5rem}.timeline-end a{font-size:.85rem;font-weight:700}@keyframes spin{to{transform:rotate(360deg)}}
+	@media(max-width:800px){.home-hero{grid-template-columns:1fr;padding:5rem 0 4rem}.home-hero:after{display:none}.hero-panel{justify-self:start;width:100%;max-width:440px;aspect-ratio:auto;min-height:300px}.section-heading{align-items:start;flex-direction:column}.timeline-line{left:12px}.timeline-item{grid-template-columns:25px 1fr}.timeline-date{grid-column:2;text-align:left;padding:0 0 .5rem}.timeline-node{grid-column:1;grid-row:1/3;padding-top:2.7rem}.timeline-card{grid-column:2}.load-more{margin-left:37px}.timeline-end{margin-left:12px;padding-left:25px}.hero-copy h1{font-size:clamp(2.9rem,13vw,4.4rem)}}
+	@media(prefers-reduced-motion:reduce){.orbit{animation:none}.reveal{opacity:1!important;transform:none!important}}
 </style>

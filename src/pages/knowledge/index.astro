@@ -1,0 +1,74 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { domains } from '../../config/domains';
+import { getPublishedComputerPosts } from '../../lib/content';
+
+const posts = await getPublishedComputerPosts();
+const domainEntries = Object.entries(domains).filter(([key]) => key !== 'reading').map(([key, info]) => ({
+	key, ...info, count: posts.filter((post) => post.data.domain === key).length,
+}));
+const allTags = [...new Set(posts.flatMap((post) => post.data.tags))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+---
+
+<Layout title="知识库" description="按领域、标签和全文检索马超的技术学习沉淀。" activeNav="knowledge" wide>
+	<header class="page-hero">
+		<div><p class="eyebrow">KNOWLEDGE INDEX</p><h1>知识不是目录，<br /><em>而是一张不断连接的网。</em></h1></div>
+		<div class="hero-note"><span>{posts.length.toString().padStart(2, '0')}</span><p>篇公开技术沉淀<br />覆盖 {domainEntries.filter((domain) => domain.count > 0).length} 个知识领域</p></div>
+	</header>
+
+	<section class="search-workspace" id="search">
+		<div class="search-box"><span>⌕</span><input id="knowledge-search" type="search" placeholder="搜索标题、正文或标签" autocomplete="off" /><kbd>⌘ K</kbd></div>
+		<div class="workspace-row">
+			<div class="domain-filter" aria-label="领域筛选"><button class="active" data-domain-filter="all">全部领域</button>{domainEntries.map((domain) => <button data-domain-filter={domain.key}>{domain.label}<small>{domain.count}</small></button>)}</div>
+			<select id="status-filter" aria-label="状态筛选"><option value="all">全部状态</option><option value="growing">持续完善</option><option value="settled">已沉淀</option></select>
+		</div>
+		<div class="active-tags"><span>常用标签</span>{allTags.slice(0, 10).map((tag) => <button data-tag-filter={tag}>#{tag}</button>)}</div>
+	</section>
+
+	<section class="domain-overview">
+		<div class="section-title"><div><p class="eyebrow">DOMAINS</p><h2>领域概览</h2></div><p>稳定领域构成骨架，标签负责跨领域连接。</p></div>
+		<div class="domain-grid">{domainEntries.map((domain) => <button class="domain-card" data-domain-jump={domain.key}><span>{domain.mark}</span><div><h3>{domain.label}</h3><p>{domain.description}</p></div><strong>{domain.count.toString().padStart(2, '0')}</strong></button>)}</div>
+	</section>
+
+	<section class="library-section">
+		<div class="section-title"><div><p class="eyebrow">ALL NOTES</p><h2>全部内容</h2></div><p id="result-count">找到 {posts.length} 篇内容</p></div>
+		<div class="post-grid" id="post-grid">{posts.map((post) => <PostCard post={post} collection="computer" />)}</div>
+		<div class="empty-state" id="empty-state" hidden><span>⌕</span><h3>没有找到匹配内容</h3><p>试试移除筛选条件，或换一个更短的关键词。</p></div>
+	</section>
+
+	<section class="map-preview">
+		<div><p class="eyebrow">KNOWLEDGE GRAPH · NEXT</p><h2>关系图谱正在生长</h2><p>第一阶段已经用领域、标签和相关文章建立关系基础。下一阶段会把这些连接呈现为可交互的知识图谱。</p></div>
+		<div class="node-field" aria-hidden="true"><i>数据库</i><i>云原生</i><i>算法</i><i>编程语言</i><i>AI</i></div>
+	</section>
+
+	<script>
+		const searchInput = document.querySelector<HTMLInputElement>('#knowledge-search');
+		const statusSelect = document.querySelector<HTMLSelectElement>('#status-filter');
+		const cards = [...document.querySelectorAll<HTMLElement>('.post-card')];
+		const domainButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-domain-filter]')];
+		const tagButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-tag-filter]')];
+		let currentDomain = 'all'; let currentTag = '';
+		const applyFilters = () => {
+			const query = searchInput?.value.trim().toLocaleLowerCase() || '';
+			const status = statusSelect?.value || 'all'; let visible = 0;
+			cards.forEach((card) => {
+				const matches = (!query || card.dataset.search?.toLocaleLowerCase().includes(query)) && (currentDomain === 'all' || card.dataset.domain === currentDomain) && (status === 'all' || card.dataset.status === status) && (!currentTag || card.dataset.search?.includes(currentTag));
+				card.hidden = !matches; if (matches) visible++;
+			});
+			const count = document.querySelector('#result-count'); if (count) count.textContent = `找到 ${visible} 篇内容`;
+			const empty = document.querySelector<HTMLElement>('#empty-state'); if (empty) empty.hidden = visible !== 0;
+		};
+		domainButtons.forEach((button) => button.addEventListener('click', () => { currentDomain = button.dataset.domainFilter || 'all'; domainButtons.forEach((item) => item.classList.toggle('active', item === button)); applyFilters(); }));
+		document.querySelectorAll<HTMLButtonElement>('[data-domain-jump]').forEach((button) => button.addEventListener('click', () => { document.querySelector<HTMLButtonElement>(`[data-domain-filter="${button.dataset.domainJump}"]`)?.click(); document.querySelector('.library-section')?.scrollIntoView({ behavior: 'smooth' }); }));
+		tagButtons.forEach((button) => button.addEventListener('click', () => { currentTag = currentTag === button.dataset.tagFilter ? '' : button.dataset.tagFilter || ''; tagButtons.forEach((item) => item.classList.toggle('active', item.dataset.tagFilter === currentTag)); applyFilters(); }));
+		searchInput?.addEventListener('input', applyFilters); statusSelect?.addEventListener('change', applyFilters);
+		const urlTag = new URLSearchParams(location.search).get('tag'); if (urlTag) { currentTag = urlTag; tagButtons.find((button) => button.dataset.tagFilter === urlTag)?.classList.add('active'); applyFilters(); }
+	</script>
+</Layout>
+
+<style>
+	.page-hero{padding:6.5rem 0 5rem;display:flex;justify-content:space-between;align-items:end;gap:3rem}.eyebrow{font:700 .68rem var(--font-mono);letter-spacing:.18em;color:var(--accent-soft);margin:0 0 1rem}.page-hero h1{font-size:clamp(3rem,6vw,5.7rem);line-height:1.02;letter-spacing:-.06em;margin:0}.page-hero h1 em{font-family:var(--font-reading);font-style:normal;font-weight:500;color:transparent;background:linear-gradient(100deg,var(--accent-soft),var(--accent-2));background-clip:text}.hero-note{min-width:210px;padding-left:1.5rem;border-left:1px solid var(--border)}.hero-note span{font:300 3.5rem/1 var(--font-ui)}.hero-note p{color:var(--text-muted);font-size:.75rem;line-height:1.8;margin:.8rem 0 0}.search-workspace{padding:1.2rem;border:1px solid var(--border);border-radius:19px;background:color-mix(in srgb,var(--surface) 82%,transparent)}.search-box{height:56px;display:flex;align-items:center;gap:1rem;padding:0 1rem;border:1px solid var(--border-strong);border-radius:12px;background:var(--page-bg)}.search-box>span{font-size:1.4rem;color:var(--accent-soft)}.search-box input{flex:1;background:transparent;border:0;outline:0;color:var(--text);font-size:.95rem}.search-box input::placeholder{color:var(--text-muted)}.workspace-row{display:flex;justify-content:space-between;gap:1rem;padding-top:1rem}.domain-filter{display:flex;gap:.4rem;flex-wrap:wrap}.domain-filter button,.active-tags button{border:0;background:transparent;color:var(--text-muted);padding:.45rem .65rem;border-radius:7px;cursor:pointer;font-size:.73rem}.domain-filter button small{margin-left:.4rem;color:inherit}.domain-filter button.active,.domain-filter button:hover,.active-tags button.active,.active-tags button:hover{background:var(--accent-wash);color:var(--accent-soft)}#status-filter{border:1px solid var(--border);background:var(--surface-strong);color:var(--text-secondary);padding:.45rem .75rem;border-radius:8px;font-size:.73rem}.active-tags{display:flex;align-items:center;gap:.2rem;flex-wrap:wrap;margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border)}.active-tags>span{font-size:.68rem;color:var(--text-muted);margin-right:.45rem}.section-title{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-bottom:2rem}.section-title h2{font-size:2rem;letter-spacing:-.035em;margin:0}.section-title>p{color:var(--text-muted);font-size:.78rem}.domain-overview,.library-section{padding:6rem 0 0}.domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}.domain-card{text-align:left;display:grid;grid-template-columns:46px 1fr auto;align-items:start;gap:1rem;padding:1.2rem;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);cursor:pointer}.domain-card:hover{border-color:var(--accent);transform:translateY(-2px)}.domain-card>span{width:42px;height:42px;display:grid;place-items:center;border-radius:10px;background:var(--accent-wash);color:var(--accent-soft);font:bold .72rem var(--font-mono)}.domain-card h3{margin:.1rem 0 .3rem;font-size:.95rem}.domain-card p{margin:0;color:var(--text-muted);font-size:.7rem;line-height:1.5}.domain-card>strong{font:400 1.05rem var(--font-mono);color:var(--text-muted)}.post-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.post-grid :global(.post-card[hidden]){display:none}.empty-state{text-align:center;padding:5rem 1rem;border:1px dashed var(--border-strong);border-radius:18px}.empty-state span{font-size:2rem;color:var(--accent-soft)}.empty-state h3{margin:.8rem 0 .3rem}.empty-state p{color:var(--text-muted);margin:0}.map-preview{margin:7rem 0 3rem;padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:3rem;border:1px solid var(--border);border-radius:24px;background:linear-gradient(130deg,var(--surface),transparent);overflow:hidden}.map-preview h2{font-size:2rem;margin:.5rem 0}.map-preview>div>p:last-child{color:var(--text-secondary);max-width:550px}.node-field{height:260px;position:relative;border:1px solid var(--border);border-radius:50%;background:radial-gradient(circle,var(--accent-wash),transparent 62%)}.node-field:before,.node-field:after{content:"";position:absolute;inset:18%;border:1px solid var(--border);border-radius:50%}.node-field:after{inset:36%}.node-field i{position:absolute;padding:.45rem .7rem;border:1px solid var(--border-strong);border-radius:999px;background:var(--surface);font-style:normal;font-size:.68rem;color:var(--text-secondary)}.node-field i:nth-child(1){left:42%;top:42%;color:var(--accent-soft)}.node-field i:nth-child(2){right:8%;top:20%}.node-field i:nth-child(3){left:8%;top:22%}.node-field i:nth-child(4){right:14%;bottom:16%}.node-field i:nth-child(5){left:16%;bottom:12%}
+	@media(max-width:950px){.domain-grid,.post-grid{grid-template-columns:repeat(2,1fr)}.map-preview{grid-template-columns:1fr}.node-field{max-width:480px;width:100%}}
+	@media(max-width:650px){.page-hero{padding:4rem 0 3rem;align-items:start;flex-direction:column}.hero-note{width:100%}.workspace-row{align-items:stretch;flex-direction:column}.domain-filter{flex-wrap:nowrap;overflow-x:auto;padding-bottom:.4rem}.domain-filter button{white-space:nowrap}.domain-grid,.post-grid{grid-template-columns:1fr}.section-title{align-items:start;flex-direction:column;gap:.5rem}.active-tags{max-height:82px;overflow:hidden}.map-preview{padding:1.4rem}.node-field{height:220px}}
+</style>

@@ -2,6 +2,10 @@
 title: 微服务架构设计
 date: 2026-01-28
 description: 微服务架构的原理与实践
+domain: cloud-native
+tags: [微服务, 分布式系统, 容器化]
+status: growing
+draft: false
 subcategory: backend
 term: microservices
 order: 1

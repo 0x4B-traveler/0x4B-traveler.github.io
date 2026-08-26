@@ -2,6 +2,10 @@
 title: '《百年孤独》读后感'
 date: '2023-10-20'
 description: '关于马尔克斯的巨著'
+domain: reading
+tags: [文学, 小说, 拉丁美洲]
+status: settled
+draft: false
 subcategory: 'literature'
 order: 1
 ---

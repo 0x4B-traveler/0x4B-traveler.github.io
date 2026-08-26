@@ -2,17 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="About Me">
-	<h1>About Me</h1>
-	<p>Hi, I'm a learner. This is my personal blog where I share my thoughts and learning journey.</p>
-	
-	<h2>My Interests</h2>
-	<ul>
-		<li>Coding</li>
-		<li>Reading</li>
-		<li>Music</li>
-	</ul>
-
-	<h2>Contact</h2>
-	<p>You can find me on <a href="https://github.com">GitHub</a>.</p>
+<Layout title="关于马超" description="关于马超与这个持续生长的个人知识库。" activeNav="about">
+	<div class="about-page">
+		<header><p class="eyebrow">ABOUT</p><h1>你好，我是马超。</h1><p class="lead">一名长期学习者，也是一名相信“输出比收藏更接近理解”的技术实践者。</p></header>
+		<section class="about-grid">
+			<div class="portrait" aria-hidden="true"><span>M</span><i></i></div>
+			<div class="about-copy">
+				<h2>为什么建立这个知识库？</h2>
+				<p>学习过程中最容易发生的事，是看过很多内容，却很难在真正需要时重新调用。这个网站用于把零散输入整理成文章，再通过领域、标签和知识关系连接起来。</p>
+				<p>这里的内容不是静态答案。标记为“持续完善”的文章会随着理解更新；“已沉淀”代表它已经形成相对稳定的结构。</p>
+				<div class="principles"><article><strong>01</strong><h3>以写促学</h3><p>只有能够清楚表达，才算真正理解。</p></article><article><strong>02</strong><h3>保持连接</h3><p>知识的价值来自它与其他知识的关系。</p></article><article><strong>03</strong><h3>长期积累</h3><p>不追逐打卡数字，记录有意义的沉淀。</p></article></div>
+			</div>
+		</section>
+		<section class="contact"><div><p class="eyebrow">CONTACT</p><h2>继续了解</h2></div><p>项目与联系方式会在整理完成后补充。现在可以先从我的技术文章和阅读笔记开始。</p><div><a class="button primary" href="/knowledge">浏览知识库</a><a class="button secondary" href="/portfolio">查看能力证据</a></div></section>
+	</div>
 </Layout>
+
+<style>
+	.about-page{padding:7rem 0}.eyebrow{font:700 .68rem var(--font-mono);letter-spacing:.18em;color:var(--accent-soft);margin:0 0 1rem}.about-page>header{max-width:830px}.about-page h1{font-size:clamp(3.4rem,7vw,6rem);letter-spacing:-.06em;line-height:1;margin:0}.lead{font-family:var(--font-reading);font-size:1.25rem;line-height:1.85;color:var(--text-secondary);margin:2rem 0}.about-grid{display:grid;grid-template-columns:280px 1fr;gap:5rem;margin-top:5rem;padding-top:5rem;border-top:1px solid var(--border)}.portrait{width:260px;height:340px;border:1px solid var(--border);border-radius:120px 120px 28px 28px;background:linear-gradient(160deg,var(--surface-strong),var(--surface));display:grid;place-items:center;position:relative;overflow:hidden}.portrait span{font:300 7rem var(--font-mono);color:var(--accent-soft);z-index:1}.portrait:before,.portrait:after{content:"";position:absolute;width:220px;height:220px;border:1px solid var(--border-strong);border-radius:50%}.portrait:after{width:130px;height:130px}.portrait i{position:absolute;inset:auto 0 0;height:42%;background:linear-gradient(transparent,var(--accent-wash))}.about-copy h2{font-size:2rem;margin-top:0}.about-copy>p{color:var(--text-secondary);font-family:var(--font-reading);font-size:1.02rem;line-height:2}.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:2.5rem}.principles article{padding:1.1rem;border:1px solid var(--border);border-radius:13px;background:var(--surface)}.principles strong{font:500 .68rem var(--font-mono);color:var(--accent-soft)}.principles h3{font-size:.95rem;margin:.8rem 0 .4rem}.principles p{font-size:.72rem;color:var(--text-muted);margin:0;line-height:1.6}.contact{display:grid;grid-template-columns:.6fr 1fr auto;gap:3rem;align-items:end;margin-top:7rem;padding:2.5rem;border:1px solid var(--border);border-radius:20px;background:var(--surface)}.contact h2{margin:0;font-size:1.8rem}.contact>p{color:var(--text-secondary);font-size:.85rem;line-height:1.8;margin:0}.contact>div:last-child{display:flex;gap:.7rem}
+	@media(max-width:900px){.about-grid{grid-template-columns:1fr}.portrait{width:220px;height:290px}.contact{grid-template-columns:1fr;align-items:start}}
+	@media(max-width:650px){.about-page{padding:5rem 0}.about-grid{gap:3rem;margin-top:3rem;padding-top:3rem}.principles{grid-template-columns:1fr}.contact{margin-top:4rem;padding:1.5rem}.contact>div:last-child{flex-direction:column}}
+</style>

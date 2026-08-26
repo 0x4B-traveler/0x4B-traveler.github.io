@@ -2,6 +2,10 @@
 title: 计算机基础知识入门
 date: 2026-01-28
 description: 计算机基础知识的综合介绍
+domain: computer-science
+tags: [计算机基础, 体系结构, 操作系统]
+status: growing
+draft: false
 subcategory: frontend
 term: basic
 order: 1

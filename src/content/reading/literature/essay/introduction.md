@@ -2,6 +2,10 @@
 title: 散文随笔集
 date: 2026-01-28
 description: 散文、随笔与杂文的阅读与创作
+domain: reading
+tags: [文学, 散文, 阅读]
+status: growing
+draft: false
 subcategory: literature
 term: essay
 order: 1

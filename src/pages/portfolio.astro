@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const capabilities = [
+	{ mark: 'DB', title: '数据库与数据系统', description: '从数据模型、索引和事务出发，建立对数据库设计与性能的系统理解。', evidence: [{ label: '数据库系统学习', href: '/knowledge/backend/database/introduction' }] },
+	{ mark: 'CN', title: '云原生与分布式架构', description: '关注服务拆分、通信、容器编排以及分布式系统中的一致性问题。', evidence: [{ label: '微服务架构设计', href: '/knowledge/backend/microservices/introduction' }] },
+	{ mark: 'FE', title: '前端工程与语言实践', description: '理解 React、Vue 等框架的编程模型，并持续整理性能与工程实践。', evidence: [{ label: 'React 框架学习指南', href: '/knowledge/frontend/react/introduction' }, { label: '前端性能优化指南', href: '/knowledge/frontend/performance/introduction' }] },
+	{ mark: 'AI', title: '人工智能应用', description: '跟进大语言模型、RAG 与计算机视觉的基础原理和应用方式。', evidence: [{ label: '大模型技术探索', href: '/knowledge/ai/llm/introduction' }] },
+];
+---
+
+<Layout title="项目与能力" description="用真实项目和文章证明能力，而不是罗列没有上下文的技能词。" activeNav="portfolio" wide>
+	<header class="portfolio-hero">
+		<div><p class="eyebrow">WORK & CAPABILITIES</p><h1>我如何理解问题，<br /><em>以及如何把它做出来。</em></h1></div>
+		<p>这里不放技能进度条。每项能力都由持续沉淀的文章支撑，项目则记录问题、方案与实际结果。</p>
+	</header>
+
+	<section class="capability-section">
+		<div class="section-heading"><p class="eyebrow">CAPABILITIES</p><h2>能力与证据</h2></div>
+		<div class="capability-list">{capabilities.map((item, index) => <article><span class="number">0{index + 1}</span><span class="mark">{item.mark}</span><div class="capability-copy"><h3>{item.title}</h3><p>{item.description}</p></div><div class="evidence"><small>相关沉淀</small>{item.evidence.map((link) => <a href={link.href}>{link.label}<span>↗</span></a>)}</div></article>)}</div>
+	</section>
+
+	<section class="project-section">
+		<div class="section-heading"><p class="eyebrow">SELECTED PROJECTS</p><h2>项目案例</h2></div>
+		<div class="project-empty"><div class="project-orbit"><span></span><i></i></div><div><h3>真实项目正在整理中</h3><p>项目会以“问题 → 方案 → 结果 → 相关知识”的结构呈现。这里暂不使用虚构案例占位。</p><a href="/knowledge">先浏览我的知识沉淀 →</a></div></div>
+	</section>
+</Layout>
+
+<style>
+	.eyebrow{font:700 .68rem var(--font-mono);letter-spacing:.18em;color:var(--accent-soft);margin:0 0 1rem}.portfolio-hero{padding:7rem 0 6rem;display:grid;grid-template-columns:1.4fr .6fr;align-items:end;gap:5rem}.portfolio-hero h1{font-size:clamp(3rem,6vw,5.8rem);line-height:1.03;letter-spacing:-.06em;margin:0}.portfolio-hero h1 em{font-family:var(--font-reading);font-style:normal;font-weight:500;color:transparent;background:linear-gradient(100deg,var(--accent-soft),var(--accent-2));background-clip:text}.portfolio-hero>p{color:var(--text-secondary);line-height:1.9;padding-left:1.5rem;border-left:1px solid var(--border)}.capability-section,.project-section{padding:5rem 0;border-top:1px solid var(--border)}.section-heading h2{font-size:2.2rem;margin:0 0 2.5rem;letter-spacing:-.04em}.capability-list article{display:grid;grid-template-columns:42px 52px 1fr minmax(230px,.7fr);gap:1.5rem;align-items:start;padding:2rem 0;border-top:1px solid var(--border)}.number{font:500 .72rem var(--font-mono);color:var(--text-muted);padding-top:.4rem}.mark{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--border-strong);border-radius:11px;background:var(--surface);color:var(--accent-soft);font:bold .72rem var(--font-mono)}.capability-copy h3{margin:0 0 .5rem;font-size:1.3rem}.capability-copy p{margin:0;color:var(--text-secondary);font-size:.85rem;line-height:1.75;max-width:570px}.evidence{display:grid;gap:.45rem}.evidence small{color:var(--text-muted);font-size:.65rem}.evidence a{display:flex;justify-content:space-between;padding:.55rem .7rem;border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:.75rem}.evidence a:hover{color:var(--text);background:var(--surface-strong)}.project-empty{min-height:320px;display:grid;grid-template-columns:300px 1fr;align-items:center;gap:4rem;padding:2rem 4rem;border:1px dashed var(--border-strong);border-radius:22px;background:linear-gradient(135deg,var(--surface),transparent)}.project-empty h3{font-size:1.6rem;margin:0}.project-empty p{color:var(--text-secondary);max-width:570px;line-height:1.8}.project-empty a{font-size:.82rem;font-weight:700}.project-orbit{width:220px;height:220px;border:1px solid var(--border);border-radius:50%;position:relative}.project-orbit:before,.project-orbit:after{content:"";position:absolute;inset:22%;border:1px solid var(--border);border-radius:50%}.project-orbit:after{inset:42%}.project-orbit span{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px var(--accent);left:30px;top:34px}.project-orbit i{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--accent-2);inset:0;margin:auto;box-shadow:0 0 28px var(--accent-2)}
+	@media(max-width:900px){.portfolio-hero{grid-template-columns:1fr;gap:2rem}.capability-list article{grid-template-columns:35px 48px 1fr}.evidence{grid-column:3}.project-empty{grid-template-columns:220px 1fr;padding:2rem}.project-orbit{width:190px;height:190px}}
+	@media(max-width:650px){.portfolio-hero{padding:5rem 0 4rem}.portfolio-hero>p{padding-left:0;border:0}.capability-list article{grid-template-columns:42px 1fr;gap:1rem}.number{display:none}.capability-copy{grid-column:2}.evidence{grid-column:2}.project-empty{grid-template-columns:1fr;padding:1.5rem}.project-orbit{width:150px;height:150px}}
+</style>

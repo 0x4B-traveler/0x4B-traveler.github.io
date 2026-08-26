@@ -1,0 +1,22 @@
+---
+import { domainLabel, formatDate, postHref, statusLabel } from '../lib/content';
+
+const { post, collection = 'computer', compact = false } = Astro.props;
+const href = postHref(post, collection);
+---
+
+<article class:list={['post-card', { compact }]} data-domain={post.data.domain} data-status={post.data.status} data-search={`${post.data.title} ${post.data.description} ${post.data.tags.join(' ')} ${post.body}`}>
+	<a href={href}>
+		<div class="post-meta"><span>{domainLabel(post.data.domain)}</span><time>{formatDate(post.data.updated ?? post.data.date)}</time></div>
+		<h2>{post.data.title}</h2>
+		<p>{post.data.description}</p>
+		<footer>
+			<div>{post.data.tags.slice(0, 3).map((tag: string) => <span>#{tag}</span>)}</div>
+			<small class:list={['status', post.data.status]}>{statusLabel(post.data.status)}</small>
+		</footer>
+	</a>
+</article>
+
+<style>
+	.post-card{min-width:0}.post-card>a{height:100%;display:flex;flex-direction:column;padding:1.45rem;border:1px solid var(--border);border-radius:17px;background:color-mix(in srgb,var(--surface) 76%,transparent);color:inherit;transition:.22s ease}.post-card>a:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 42%,var(--border));background:var(--surface);box-shadow:var(--shadow-lg)}.post-meta{display:flex;justify-content:space-between;gap:1rem;color:var(--text-muted);font-size:.7rem}.post-meta span{color:var(--accent-soft);font-weight:700}.post-card h2{font-size:1.12rem;line-height:1.45;letter-spacing:-.015em;margin:1rem 0 .6rem}.post-card p{font-size:.84rem;line-height:1.75;color:var(--text-secondary);margin:0 0 1.2rem;flex:1}.post-card footer{display:flex;align-items:end;justify-content:space-between;gap:1rem;border-top:1px solid var(--border);padding-top:1rem}.post-card footer>div{display:flex;gap:.55rem;flex-wrap:wrap}.post-card footer span{font:500 .66rem var(--font-mono);color:var(--text-muted)}.status{white-space:nowrap;color:var(--text-muted);font-size:.68rem}.status:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:.4rem}.status.settled:before{background:#55c99c}.post-card.compact>a{padding:1.15rem}.post-card.compact h2{font-size:1rem;margin:.7rem 0 .45rem}.post-card.compact p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>

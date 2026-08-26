@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPublishedReadingPosts } from '../../lib/content';
+
+const posts = await getPublishedReadingPosts();
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+---
+
+<Layout title="读书" description="马超的文学阅读、观念与长期思考。" activeNav="reading" wide>
+	<header class="reading-hero">
+		<p class="eyebrow">READING NOTES</p>
+		<h1>读书，是借别人的眼睛，<br /><em>重新看一次世界。</em></h1>
+		<p>这里收录文学阅读、观念碰撞与那些值得反复回看的句子。</p>
+		<div class="reading-meta"><span>{posts.length} 篇笔记</span><span>{tags.length} 个标签</span><span>持续更新</span></div>
+	</header>
+	<section class="reading-list">
+		<div class="section-heading"><div><p class="eyebrow">ALL READING</p><h2>阅读沉淀</h2></div><div>{tags.map((tag) => <span>#{tag}</span>)}</div></div>
+		<div class="reading-grid">{posts.map((post) => <PostCard post={post} collection="reading" />)}</div>
+	</section>
+</Layout>
+
+<style>
+	.eyebrow{font:700 .68rem var(--font-mono);letter-spacing:.18em;color:var(--amber);margin:0 0 1rem}.reading-hero{padding:8rem 0 6rem;max-width:1000px}.reading-hero h1{font-size:clamp(3rem,6.3vw,6rem);line-height:1.05;letter-spacing:-.055em;margin:0}.reading-hero h1 em{font-family:var(--font-reading);font-style:normal;font-weight:500;color:var(--amber)}.reading-hero>p:not(.eyebrow){color:var(--text-secondary);max-width:650px;font-family:var(--font-reading);font-size:1.05rem;line-height:1.9;margin:2rem 0}.reading-meta{display:flex;gap:1.8rem;color:var(--text-muted);font-size:.75rem}.reading-meta span:before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--amber);margin-right:.5rem}.reading-list{padding:2rem 0 7rem;border-top:1px solid var(--border)}.section-heading{display:flex;justify-content:space-between;align-items:end;margin:3rem 0 2rem;gap:2rem}.section-heading h2{font-size:2rem;margin:0}.section-heading>div:last-child{display:flex;justify-content:flex-end;gap:.5rem;flex-wrap:wrap}.section-heading span{font:500 .67rem var(--font-mono);color:var(--text-muted)}.reading-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}@media(max-width:900px){.reading-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.reading-hero{padding:5rem 0 4rem}.reading-grid{grid-template-columns:1fr}.section-heading{align-items:start;flex-direction:column}.section-heading>div:last-child{justify-content:flex-start}.reading-meta{gap:.7rem;flex-direction:column}}
+</style>

@@ -2,6 +2,10 @@
 title: 大模型（LLM）技术探索
 date: 2026-01-28
 description: 大语言模型的原理与应用
+domain: ai
+tags: [大语言模型, Transformer, RAG]
+status: growing
+draft: false
 subcategory: ai
 term: llm
 order: 1

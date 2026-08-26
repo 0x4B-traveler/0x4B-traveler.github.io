@@ -2,6 +2,10 @@
 title: 小说阅读笔记
 date: 2026-01-28
 description: 经典与现代小说阅读分享
+domain: reading
+tags: [文学, 小说, 阅读]
+status: growing
+draft: false
 subcategory: literature
 term: novel
 order: 1

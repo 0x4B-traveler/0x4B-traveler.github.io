@@ -1,19 +1,28 @@
 import { defineCollection, z } from 'astro:content';
 
-const blogCollection = defineCollection({
-	schema: z.object({
-		title: z.string(),
-		date: z.string().or(z.date()),
-		description: z.string().optional(),
-		subcategory: z.string().optional(), // 新增字段
-		term: z.string().optional(), // 新增三级分类字段
-		order: z.number().optional().default(100), // 用于手动排序
-	}),
+const updateSchema = z.object({
+	date: z.string().or(z.date()),
+	summary: z.string(),
+});
+
+const knowledgeSchema = z.object({
+	title: z.string(),
+	description: z.string(),
+	date: z.string().or(z.date()),
+	updated: z.string().or(z.date()).optional(),
+	domain: z.string(),
+	tags: z.array(z.string()).default([]),
+	status: z.enum(['growing', 'settled']).default('growing'),
+	draft: z.boolean().default(false),
+	updates: z.array(updateSchema).default([]),
+	related: z.array(z.string()).default([]),
+	order: z.number().default(100),
+	// 兼容迁移前的字段；页面不再依赖固定三级目录。
+	subcategory: z.string().optional(),
+	term: z.string().optional(),
 });
 
 export const collections = {
-	'computer': blogCollection,
-	'reading': blogCollection,
-	'life': blogCollection,
-	'daily': blogCollection,
+	computer: defineCollection({ schema: knowledgeSchema }),
+	reading: defineCollection({ schema: knowledgeSchema }),
 };

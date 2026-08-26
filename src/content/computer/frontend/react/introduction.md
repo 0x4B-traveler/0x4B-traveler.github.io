@@ -2,6 +2,11 @@
 title: React 框架学习指南
 date: 2026-01-28
 description: React 框架的完整学习路线
+domain: programming-language
+tags: [React, JavaScript, 前端]
+status: growing
+draft: false
+related: [basic/react-hooks]
 subcategory: frontend
 term: react
 order: 1

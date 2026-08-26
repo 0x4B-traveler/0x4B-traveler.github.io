@@ -2,6 +2,10 @@
 title: 计算机视觉（CV）技术
 date: 2026-01-28
 description: 计算机视觉的算法与应用
+domain: ai
+tags: [计算机视觉, 深度学习, 图像处理]
+status: growing
+draft: false
 subcategory: ai
 term: cv
 order: 1
