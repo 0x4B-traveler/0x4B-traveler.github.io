@@ -5,7 +5,7 @@ description: 大语言模型的原理与应用
 domain: ai
 tags: [大语言模型, Transformer, RAG]
 status: growing
-draft: false
+draft: true
 subcategory: ai
 term: llm
 order: 1

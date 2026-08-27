@@ -5,7 +5,7 @@ description: 计算机视觉的算法与应用
 domain: ai
 tags: [计算机视觉, 深度学习, 图像处理]
 status: growing
-draft: false
+draft: true
 subcategory: ai
 term: cv
 order: 1

@@ -5,7 +5,7 @@ description: 计算机基础知识的综合介绍
 domain: computer-science
 tags: [计算机基础, 体系结构, 操作系统]
 status: growing
-draft: false
+draft: true
 subcategory: frontend
 term: basic
 order: 1

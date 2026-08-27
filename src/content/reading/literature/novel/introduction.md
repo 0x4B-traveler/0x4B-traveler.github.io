@@ -5,7 +5,7 @@ description: 经典与现代小说阅读分享
 domain: reading
 tags: [文学, 小说, 阅读]
 status: growing
-draft: false
+draft: true
 subcategory: literature
 term: novel
 order: 1

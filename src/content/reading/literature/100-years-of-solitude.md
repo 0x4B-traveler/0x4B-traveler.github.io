@@ -5,7 +5,7 @@ description: '关于马尔克斯的巨著'
 domain: reading
 tags: [文学, 小说, 拉丁美洲]
 status: settled
-draft: false
+draft: true
 subcategory: 'literature'
 order: 1
 ---
