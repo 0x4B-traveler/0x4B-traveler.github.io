@@ -5,7 +5,7 @@ description: 解析 MySQL 事务隔离级别与 MVCC 的实现原理
 domain: database
 tags: [mysql, 数据库]
 status: growing
-draft: true
+draft: false
 subcategory: backend
 term: database
 order: 4
