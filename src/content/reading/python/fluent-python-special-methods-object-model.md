@@ -1,7 +1,7 @@
 ---
 title: '《Fluent Python》：特殊方法、对象模型与推导式'
 date: '2026-08-29'
-description: '整理《Fluent Python》中关于特殊方法、CPython 对象模型、序列类型、列表推导式、生成器表达式和海象运算符的阅读笔记。'
+description: '整理《Fluent Python》中关于特殊方法、CPython 对象模型、序列类型、列表推导式、生成器表达式、元组和海象运算符的阅读笔记。'
 domain: reading
 tags: [python]
 status: growing
@@ -66,16 +66,34 @@ print(list(countdown))      # [3, 2, 1]
 
 ## 列表推导式与生成器表达式
 
-列表推导式适合目标就是一个列表、并且希望立即得到全部结果的场景：
+列表推导式的作用很单一：构建列表。它适合目标就是一个列表、并且希望立即得到全部结果的场景：
 
 ```python
 squares = [x * x for x in range(10)]
 ```
 
-生成器表达式则会按需产生结果，不会一次性创建完整列表：
+如果要构建元组、数组或其他类型的序列，可以把列表推导式传给相应的构造函数，但这种写法会先创建一个完整的中间列表：
 
 ```python
-squares = (x * x for x in range(10))
+coordinates = tuple([x * 2 for x in range(5)])
+```
+
+更合适的写法通常是把生成器表达式交给构造函数。生成器表达式遵循迭代器协议，按需逐个产出元素，不会为了给构造函数提供数据而预先创建完整列表：
+
+```python
+coordinates = tuple(x * 2 for x in range(5))
+```
+
+当生成器表达式是函数调用的唯一参数时，可以省略它自身的圆括号：
+
+```python
+total = sum(x * x for x in range(10))
+```
+
+如果函数还有其他参数，则必须保留生成器表达式的圆括号，以便解释器识别它的边界：
+
+```python
+result = process((x * x for x in range(10)), limit=5)
 ```
 
 因此可以简单地记为：
@@ -94,6 +112,34 @@ selected = [
     if name.startswith('Py')
 ]
 ```
+
+## 元组的双重角色
+
+元组既可以作为不可变序列使用，也可以作为没有字段名称的记录使用。这两种用途关注的重点不同。
+
+作为不可变序列时，元组强调元素的顺序和集合本身的结构不可变，通常会把其中的元素视为同一类数据：
+
+```python
+rgb = (255, 128, 0)
+```
+
+作为记录时，元组中每个位置都有特定含义，元素类型可以不同。此时，元素数量和位置比“不可变列表”这一性质更重要：
+
+```python
+traveler = ('Ma Chao', 30, 'Shanghai')
+name, age, city = traveler
+```
+
+这个元组相当于一条没有字段名的记录：第一个位置表示姓名，第二个位置表示年龄，第三个位置表示城市。解包可以把各个位置的含义显式表达出来，但如果记录需要在多处传递，或者字段较多，使用 `namedtuple`、`typing.NamedTuple` 或数据类通常会更清晰。
+
+需要注意，元组的不可变指的是它保存的引用不能被替换，并不保证它引用的对象本身不可变：
+
+```python
+items = (1, 2, ['Python'])
+items[2].append('Fluent Python')
+```
+
+这里不能替换 `items[2]`，但仍然可以修改该位置所引用的列表。
 
 ## 海象运算符与作用域
 
