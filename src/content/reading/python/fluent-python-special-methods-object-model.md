@@ -141,6 +141,52 @@ items[2].append('Fluent Python')
 
 这里不能替换 `items[2]`，但仍然可以修改该位置所引用的列表。
 
+### 元组的内存占用
+
+在 CPython 中，长度相同的元组通常比列表占用更少的内存。元组长度固定，可以为元素引用分配刚好够用的空间；列表为了支持高效追加，通常会预留额外容量，而且还需要维护与可变性相关的信息。
+
+可以使用 `sys.getsizeof()` 观察当前 Python 实现中的浅层内存占用：
+
+```python
+from sys import getsizeof
+
+numbers_tuple = (1, 2, 3, 4, 5)
+numbers_list = [1, 2, 3, 4, 5]
+
+print(getsizeof(numbers_tuple))
+print(getsizeof(numbers_list))
+```
+
+具体字节数会随 Python 实现、版本和运行平台变化，因此这里更值得关注的是二者的相对差异，而不是某个固定数字。`getsizeof()` 只统计对象本身的浅层大小，不会递归统计元素引用的对象。
+
+### 元组的不可变性与可哈希性
+
+元组的不可变性只针对它保存的元素引用：这些引用不能被删除或替换。如果某个引用指向可变对象，那么对象内部的状态仍然可以改变，观察到的元组值也会随之变化。
+
+可哈希对象的哈希值必须在其生命周期内保持不变，并且比较相等的对象必须具有相同的哈希值。元组只有在它包含的所有元素都可哈希时才可哈希：
+
+```python
+hash((1, 2, 'Python'))       # 正常返回哈希值
+hash((1, 2, ['Python']))     # TypeError: unhashable type: 'list'
+```
+
+不可哈希的元组不能作为字典的键，也不能作为集合的元素。可以调用内置函数 `hash()`，并捕获 `TypeError`，判断一个对象的值是否固定到足以参与哈希：
+
+```python
+def fixed(x):
+    try:
+        hash(x)
+    except TypeError:
+        return False
+    return True
+
+
+print(fixed((1, 2, 'Python')))    # True
+print(fixed((1, 2, ['Python'])))  # False
+```
+
+更准确地说，这个函数判断的是对象当前是否可哈希，而不是笼统判断对象是否“不可变”。例如，一个不可哈希的元组，其元组结构本身仍然不可变，只是它包含了不可哈希的元素。
+
 ## 海象运算符与作用域
 
 海象运算符 `:=` 可以在表达式中完成赋值，适合复用刚刚计算出的结果：
