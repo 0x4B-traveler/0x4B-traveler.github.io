@@ -8,10 +8,18 @@ const allPosts = [
 	...computerPosts.map((post) => ({ ...post, type: 'tech', collection: 'computer' })),
 	...readingPosts.map((post) => ({ ...post, type: 'reading', collection: 'reading' })),
 ];
-const timelineEvents = allPosts.flatMap((post) => [
-	{ post, date: post.data.date, kind: 'published', summary: post.data.description },
-	...post.data.updates.map((update) => ({ post, date: update.date, kind: 'updated', summary: update.summary })),
-]).sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+const timelineEvents = allPosts.map((post) => {
+	const activities = [
+		{ date: post.data.date, kind: 'published', summary: post.data.description },
+		...(post.data.updated ? [{ date: post.data.updated, kind: 'updated', summary: post.data.description }] : []),
+		...post.data.updates.map((update) => ({ date: update.date, kind: 'updated', summary: update.summary })),
+	];
+	const latest = activities.sort((a, b) =>
+		new Date(b.date).valueOf() - new Date(a.date).valueOf()
+		|| (b.kind === 'updated' ? 1 : 0) - (a.kind === 'updated' ? 1 : 0)
+	)[0];
+	return { post, ...latest };
+}).sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
 const techCount = computerPosts.length;
 const readingCount = readingPosts.length;
 ---
