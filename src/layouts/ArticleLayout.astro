@@ -2,11 +2,13 @@
 import Layout from './Layout.astro';
 import PostCard from '../components/PostCard.astro';
 import { domainLabel, formatDate, statusLabel } from '../lib/content';
+import { render } from 'astro:content';
 
 const { post, collection = 'computer', relatedPosts = [] } = Astro.props;
-const { Content, headings = [] } = await post.render();
+const { Content, headings = [] } = await render(post);
 const toc = headings.filter((heading: any) => heading.depth === 2 || heading.depth === 3);
 const isReading = collection === 'reading';
+const readingMinutes = Math.max(1, Math.ceil((post.body?.length ?? 0) / 500));
 ---
 
 <Layout title={post.data.title} description={post.data.description} activeNav={isReading ? 'reading' : 'knowledge'} socialImage={null}>
@@ -17,7 +19,7 @@ const isReading = collection === 'reading';
 				<div class="article-kicker"><span>{domainLabel(post.data.domain)}</span><span>·</span><span class:list={['state', post.data.status]}>{statusLabel(post.data.status)}</span></div>
 				<h1>{post.data.title}</h1>
 				<p>{post.data.description}</p>
-				<div class="article-meta"><span>发布于 {formatDate(post.data.date)}</span>{post.data.updated && <span>更新于 {formatDate(post.data.updated)}</span>}<span>约 {Math.max(1, Math.ceil(post.body.length / 500))} 分钟阅读</span></div>
+				<div class="article-meta"><span>发布于 {formatDate(post.data.date)}</span>{post.data.updated && <span>更新于 {formatDate(post.data.updated)}</span>}<span>约 {readingMinutes} 分钟阅读</span></div>
 				<div class="article-tags">{post.data.tags.map((tag: string) => <a href={`${isReading ? '/reading' : '/knowledge'}?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}</div>
 			</header>
 

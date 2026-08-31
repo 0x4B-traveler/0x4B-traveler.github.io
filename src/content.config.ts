@@ -1,4 +1,6 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
 
 const updateSchema = z.object({
 	date: z.string().or(z.date()),
@@ -23,6 +25,12 @@ const knowledgeSchema = z.object({
 });
 
 export const collections = {
-	computer: defineCollection({ schema: knowledgeSchema }),
-	reading: defineCollection({ schema: knowledgeSchema }),
+	computer: defineCollection({
+		loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/computer' }),
+		schema: knowledgeSchema,
+	}),
+	reading: defineCollection({
+		loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/reading' }),
+		schema: knowledgeSchema,
+	}),
 };

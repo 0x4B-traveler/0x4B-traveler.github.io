@@ -12,7 +12,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=9.6.5"
+  },
   "dependencies": {
-    "astro": "^2.10.15"
+    "astro": "^7.2.9"
   }
 }

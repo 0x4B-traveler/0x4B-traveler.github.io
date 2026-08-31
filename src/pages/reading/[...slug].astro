@@ -1,12 +1,12 @@
 ---
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
-import { getPublishedReadingPosts } from '../../lib/content';
+import { getPublishedReadingPosts, postPath } from '../../lib/content';
 
 export async function getStaticPaths() {
 	const posts = await getPublishedReadingPosts();
-	return posts.map((post) => ({ params: { slug: post.slug }, props: { post, posts } }));
+	return posts.map((post) => ({ params: { slug: postPath(post) }, props: { post, posts } }));
 }
 const { post, posts } = Astro.props;
-const relatedPosts = posts.filter((candidate: any) => candidate.slug !== post.slug && candidate.data.tags.some((tag: string) => post.data.tags.includes(tag))).slice(0, 2).map((candidate: any) => ({ post: candidate, collection: 'reading' }));
+const relatedPosts = posts.filter((candidate: any) => candidate.id !== post.id && candidate.data.tags.some((tag: string) => post.data.tags.includes(tag))).slice(0, 2).map((candidate: any) => ({ post: candidate, collection: 'reading' }));
 ---
 <ArticleLayout post={post} collection="reading" relatedPosts={relatedPosts} />

@@ -15,9 +15,11 @@ export const getPublishedReadingPosts = async () => {
 	return posts.sort((a, b) => new Date(b.data.updated ?? b.data.date).valueOf() - new Date(a.data.updated ?? a.data.date).valueOf());
 };
 
+export const postPath = (post: { id: string }) => post.id.replace(/\.(?:md|mdx)$/, '');
+
 export const postHref = (post: any, collection?: 'computer' | 'reading') => {
 	const target = collection ?? post.collection;
-	return target === 'reading' ? `/reading/${post.slug}` : `/knowledge/${post.slug}`;
+	return target === 'reading' ? `/reading/${postPath(post)}` : `/knowledge/${postPath(post)}`;
 };
 
 export const statusLabel = (status: string) => status === 'settled' ? '已沉淀' : '持续完善';
