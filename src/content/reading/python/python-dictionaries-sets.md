@@ -5,7 +5,7 @@ description: '整理《Fluent Python》第3章关于字典、集合、哈希、�
 domain: reading
 tags: [python]
 status: growing
-draft: true
+draft: false
 subcategory: python
 order: 30
 ---
