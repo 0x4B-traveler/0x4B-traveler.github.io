@@ -37,6 +37,34 @@ print(record)  # (1, ['Python', 'Sequence'])
 
 因此，选择序列时需要同时考虑数据是否同质、是否需要修改、是否在意连续内存，以及它承担的是记录还是集合的角色。
 
+并不是所有“可以逐项遍历”的容器都是序列。`set` 也是可迭代对象，但没有稳定的整数索引；如果主要操作是判断成员是否存在，尤其是数据量较大时，集合通常比列表更合适：
+
+```python
+allowed = {'read', 'write', 'delete'}
+print('write' in allowed)  # True
+
+for operation in allowed:
+    print(operation)  # 顺序不应作为程序逻辑的依据
+```
+
+集合基于哈希表优化成员检查，但不承诺像列表那样按插入位置提供序列访问。因此，“可迭代”与“序列”是两个不同的概念。
+
+可以用同一组数据直观看到两种序列的修改方式：
+
+```python
+from array import array
+
+items = [1, 2, 3]
+numbers = array('i', items)
+
+items[0] = 99
+numbers[0] = 88
+print(items)    # [99, 2, 3]
+print(numbers)  # array('i', [88, 2, 3])
+```
+
+列表和数组都可变，但列表可以混合不同类型，数组则要求元素符合声明的类型码；这正是“通用性”和“紧凑存储”之间的取舍。
+
 ## 列表推导式与生成器表达式
 
 列表推导式的目标很明确：从一个或多个可迭代对象构建新列表。
@@ -82,6 +110,13 @@ city, latitude, longitude = traveler
 
 作为不可变序列时，元组更像不能增删元素的列表。它通常比同长度列表占用更少的浅层内存，而且解释器知道其长度固定。不过，只有当元组中的所有元素都可哈希时，元组本身才能作为字典键或集合元素。
 
+```python
+rgb = (255, 128, 0)
+rgb[0] = 0  # TypeError: 'tuple' object does not support item assignment
+```
+
+不可变性保护的是元组中的元素引用，不能把第一个引用替换掉；它并不等于“递归冻结所有嵌套对象”。
+
 当记录字段较多、需要跨函数传递，或者位置含义不够明显时，应考虑 `typing.NamedTuple` 或数据类，而不是让调用者记忆每个下标的语义。
 
 ## 序列和可迭代对象拆包
@@ -93,6 +128,18 @@ name, age, city = ('Alice', 30, 'Shanghai')
 ```
 
 只要对象能够逐项产出值，就能参与拆包。这种写法减少了索引操作，也能让变量名称直接说明每个位置的含义。
+
+因此，拆包不要求右侧对象支持整数索引，生成器也可以参与：
+
+```python
+def values():
+    yield 'Alice'
+    yield 30
+
+
+name, age = values()
+print(name, age)  # Alice 30
+```
 
 ### 平行赋值与交换变量
 
@@ -172,6 +219,11 @@ def handle(command):
             raise ValueError('unsupported command')
 ```
 
+```python
+print(handle(['GET', '/books']))           # read /books
+print(handle(('DELETE', '/books/1')))      # delete /books/1
+```
+
 模式中的列表写法并不表示只接受 `list`；符合序列模式协议的元组等对象也能匹配。`str`、`bytes` 和 `bytearray` 会被当作原子值，不会按字符或字节自动拆成序列模式。
 
 模式可以嵌套，也可以用 `*` 捕获剩余部分：
@@ -202,7 +254,14 @@ items = list(range(10))
 
 first_half = items[:5]
 second_half = items[5:]
+every_second = items[::2]
+
+print(first_half)   # [0, 1, 2, 3, 4]
+print(second_half)  # [5, 6, 7, 8, 9]
+print(every_second) # [0, 2, 4, 6, 8]
 ```
+
+第三个参数是步长。步长为负数时可以反向读取，例如 `items[::-1]` 会生成一个倒序的新列表；切片通常产生新对象，不会改变原列表。
 
 ### 切片对象
 
@@ -240,6 +299,21 @@ del numbers[::2]
 
 切片赋值右侧必须是可迭代对象。即使只插入一个值，也需要写成单元素列表或其他可迭代对象。
 
+例如，整数 `100` 本身不可迭代，不能直接作为切片赋值的右侧对象；即使只替换为一个元素，也要把它放进单元素列表中：
+
+```console
+>>> l = [0, 1, 2, 3, 4, 22, 9]
+>>> l[2:5] = 100  # ❶
+Traceback (most recent call last):
+   File "<stdin>", line 1, in <module>
+TypeError: can only assign an iterable
+>>> l[2:5] = [100]
+>>> l
+[0, 1, 100, 22, 9]
+```
+
+❶ 切片赋值会迭代右侧对象，并用迭代出的元素替换切片，因此右侧必须提供一个可迭代对象。单元素列表 `[100]` 满足这一要求；元组 `(100,)` 等其他可迭代对象也可以。
+
 ## 序列的加法和乘法
 
 对序列使用 `+` 或 `*` 通常会创建新序列，不修改原对象：
@@ -248,6 +322,8 @@ del numbers[::2]
 base = [1, 2]
 combined = base + [3, 4]
 repeated = base * 3
+print(combined)  # [1, 2, 3, 4]
+print(repeated)  # [1, 2, 1, 2, 1, 2]
 ```
 
 这些操作是浅复制。重复嵌套的可变对象时，多个位置可能指向同一个对象，这是构建二维列表时最常见的陷阱：
@@ -264,6 +340,7 @@ wrong_board[0][0] = 'X'
 ```python
 board = [['_'] * 3 for _ in range(3)]
 board[0][0] = 'X'
+print(board)  # [['X', '_', '_'], ['_', '_', '_'], ['_', '_', '_']]
 ```
 
 ## 序列的增量赋值
@@ -276,6 +353,7 @@ original_id = id(numbers)
 numbers += [3]
 
 assert id(numbers) == original_id
+print(numbers)  # [1, 2, 3]
 ```
 
 列表通常原地扩展，而元组等不可变序列会创建新对象。因此，对不可变序列反复使用 `+=` 可能不断复制已有内容。
@@ -289,6 +367,18 @@ data[2] += [50, 60]
 
 这条语句会抛出 `TypeError`，因为解释器最终试图给元组元素重新赋值；但内部列表可能已经被 `list.__iadd__` 修改。也就是说，操作报错却留下了部分副作用。应避免把可变对象嵌在不可变容器中后，再对该位置执行增量赋值。
 
+这也解释了为什么 `list.sort()` 返回 `None`：它表示接收者已被就地修改，而不是产生了一个新的列表。
+
+```python
+names = ['Guido', 'Ada', 'luciano']
+result = names.sort(key=str.casefold)
+
+print(names)   # ['Ada', 'Guido', 'luciano']
+print(result)  # None
+```
+
+返回 `None` 的约定会阻止这类容易误读的链式调用：`names.sort().append('Grace')`。相反，`str` 的方法通常返回新字符串，所以可以在需要时形成流式调用。
+
 ## `list.sort` 与 `sorted`
 
 `list.sort()` 原地排序列表，并返回 `None`。返回 `None` 是 Python 对原地修改方法的常见约定，提醒调用者当前对象已经改变。
@@ -296,6 +386,7 @@ data[2] += [50, 60]
 ```python
 names = ['Guido', 'luciano', 'Ada']
 names.sort(key=str.casefold)
+print(names)  # ['Ada', 'Guido', 'luciano']
 ```
 
 `sorted()` 接受任意可迭代对象，返回一个新的列表，不修改原数据：
@@ -303,9 +394,86 @@ names.sort(key=str.casefold)
 ```python
 names = ('Guido', 'luciano', 'Ada')
 ordered = sorted(names, key=str.casefold, reverse=True)
+print(ordered)  # ['luciano', 'Guido', 'Ada']
 ```
 
 两者都支持 `key` 和 `reverse`，并采用稳定排序：键值相同的元素会保持原有相对顺序。稳定性允许通过多次排序组合复杂规则，通常应从次要条件排到主要条件。
+
+`key` 函数接收一个元素并返回排序依据。Python 会在排序开始时为每个元素计算一次键，之后比较的是这些键，而不是反复调用 Python 层的双参数比较函数：
+
+```python
+values = ['10', 2, '3']
+key_calls = []
+
+
+def as_integer(value):
+    key_calls.append(value)
+    return int(value)
+
+
+ordered = sorted(values, key=as_integer)
+print(ordered)        # [2, '3', '10']
+print(len(key_calls)) # 3，每个输入项只计算一次 key
+```
+
+因此，`key` 不仅能统一混合类型的比较规则，也适合把复杂对象映射为简单的可比较值。相比自己编写双参数比较函数，使用 `key` 通常更清晰，也更容易让排序实现进行优化。
+
+### Python 默认排序算法：Timsort
+
+在 CPython 中，列表的 `list.sort()` 和内置函数 `sorted()` 默认使用 Timsort。Timsort 是一种稳定的、自适应的混合排序算法，核心思想是结合归并排序和插入排序的优点：
+
+- **发现已有顺序**：从左到右扫描数据，把已经连续有序的片段称为 *run*（运行段）保存下来；
+- **处理短片段**：很短的运行段会用插入排序扩展到合适的长度，因为插入排序在短数组或基本有序的数据上开销很小；
+- **合并运行段**：再像归并排序一样，把多个有序运行段合并成一个整体有序序列；
+- **利用部分有序性**：如果输入本来就接近有序，算法可以少做很多比较和移动，最好情况下接近 `O(n)`；最坏情况下时间复杂度为 `O(n log n)`，合并时需要额外的辅助空间。
+
+例如，下面的数据由三个已经排好序的片段组成。Timsort 能识别这些自然运行段，再进行合并：
+
+```python
+numbers = [1, 3, 5, 7, 2, 4, 6, 8, 0, 9]
+numbers.sort()
+
+print(numbers)  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+```
+
+这里并不是说调用者可以直接观察到 Timsort 的每次合并；算法会自动扫描并管理运行段。这个例子想说明的是：输入中的已有顺序不会被完全浪费，Timsort 会把它作为排序过程的一部分利用起来。
+
+Timsort 的“稳定”也很重要。稳定排序不会打乱键值相同元素的相对顺序：
+
+```python
+students = [
+    {'name': 'Alice', 'class': 'A', 'score': 90},
+    {'name': 'Bob', 'class': 'A', 'score': 90},
+    {'name': 'Carol', 'class': 'B', 'score': 95},
+    {'name': 'Dave', 'class': 'B', 'score': 90},
+]
+
+students.sort(key=lambda student: student['score'], reverse=True)
+
+print([student['name'] for student in students])
+# ['Carol', 'Alice', 'Bob', 'Dave']
+```
+
+`Alice` 和 `Bob` 的分数相同，排序后仍然保持原来的先后顺序。利用这个性质，可以先按次要条件排序，再按主要条件排序：
+
+```python
+students.sort(key=lambda student: student['name'])   # 次要条件：姓名
+students.sort(key=lambda student: student['score'], reverse=True)  # 主要条件：分数
+
+print([(student['score'], student['name']) for student in students])
+# [(95, 'Carol'), (90, 'Alice'), (90, 'Bob'), (90, 'Dave')]
+```
+
+第二次排序按分数分组时，同分学生会保留第一次按姓名排序的结果，于是同时实现了“分数降序、同分按姓名升序”。实际项目中也可以直接使用元组键表达多个条件：
+
+```python
+students = sorted(
+    students,
+    key=lambda student: (-student['score'], student['name']),
+)
+```
+
+这两种写法都依赖稳定排序；元组键通常更紧凑，而多次稳定排序在每个排序条件需要不同方向或规则时更灵活。无论使用哪种写法，都不需要手动实现 Timsort，Python 的排序 API 会负责算法细节。
 
 ## 列表之外的序列
 
@@ -323,7 +491,22 @@ measurements = array('d', (value / 10 for value in range(1000)))
 
 类型码 `'d'` 表示双精度浮点数。数组适合紧凑存储，但不提供 NumPy 那样丰富的向量化运算。
 
-### `memoryview`：零复制地查看缓冲区
+### `memoryview`：共享内存的切片
+
+`memoryview` 的关键不是另一份数据，而是对已有缓冲区的视图。下面修改视图，底层的 `bytearray` 也会同步变化：
+
+```python
+raw = bytearray(b'abcd')
+view = memoryview(raw)[1:3]
+
+view[0] = ord('X')
+print(raw)   # bytearray(b'aXcd')
+print(view.tobytes())  # b'Xc'
+```
+
+这说明切片没有复制出新的字节数组。对 `array.array` 使用 `memoryview` 时，还可以通过 `cast('B')` 按字节查看同一块内存：如果原数组使用 `'h'`，每个元素通常占两个字节，所以五个元素对应十个字节；具体字节顺序由平台决定。
+
+#### 使用 `array` 查看底层字节
 
 `memoryview` 可以在不复制字节的情况下，以不同格式访问支持缓冲区协议的对象。它适合二进制协议、图像、音频和大型数组的局部处理。
 
@@ -346,6 +529,8 @@ values = np.arange(12).reshape(3, 4)
 column_means = values.mean(axis=0)
 ```
 
+NumPy 和 SciPy 的许多核心运算在 C/C++ 等本地代码中执行，部分操作会释放 CPython 的 GIL。因此，不能简单地把“Python 多线程不能并行执行 Python 字节码”推广为“所有 NumPy 运算都不能利用多核”；应以具体操作和底层库的实现为准。
+
 ### `deque`：两端高效操作
 
 `collections.deque` 针对队首和队尾的插入、删除进行了优化：
@@ -361,6 +546,41 @@ print(recent)  # deque(['b', 'c', 'd'], maxlen=3)
 ```
 
 设置 `maxlen` 后，队列满时会自动丢弃另一端的旧元素，适合滑动窗口和最近记录。它不适合频繁访问中间位置；需要优先队列时应使用 `heapq`，需要线程间阻塞队列时应使用 `queue` 模块。
+
+列表也能模拟队列，但从头部插入或删除时需要移动后续元素；`deque` 针对两端操作进行了优化：
+
+```python
+from collections import deque
+
+queue = deque(['a', 'b'])
+queue.append('c')
+queue.popleft()
+queue.appendleft('z')
+print(queue)  # deque(['z', 'b', 'c'])
+```
+
+`deque` 的优势是两端，不是任意位置。比如列表支持 `a_list.pop(1)` 删除中间项，而 `deque` 不支持按位置高效删除；如果需要中间位置的随机访问，应重新评估数据结构。
+
+`deque` 满载时可以通过 `maxlen` 自动丢弃旧项；如果目标是在线程之间安全通信，应该使用 `queue.SimpleQueue`、`queue.Queue`、`queue.LifoQueue` 或 `queue.PriorityQueue`。这些队列在容量受限时可以阻塞生产者，形成背压，而不是像有界 `deque` 那样静默丢弃数据：
+
+```python
+from queue import Queue
+
+jobs = Queue(maxsize=1)
+jobs.put('first')
+# jobs.put('second')  # 队列已满时会等待消费者取走 first
+```
+
+如果只需要维护“当前最小项”或“前 k 大项”，不必每次都对完整列表排序，可以使用 `heapq`：
+
+```python
+import heapq
+
+scores = [72, 99, 81, 95, 88]
+print(heapq.nlargest(2, scores))  # [99, 95]
+```
+
+`heapq` 提供的是操作可变序列的函数，而不是一个队列类；它适合优先级队列和 Top-K 问题。`heapq.nlargest(k, values, key=...)` 也支持 `key` 参数。
 
 ## 序列类型的选择
 

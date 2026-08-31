@@ -46,6 +46,48 @@ print(list(countdown))      # [3, 2, 1]
 - 定义对象的布尔值，例如 `__bool__`；
 - 实现容器、迭代器和上下文管理器等协议。
 
+例如，实现 `__bool__` 后，对象就可以参与 `if` 判断；实现 `__repr__` 后，调试时能看到更有用的表示：
+
+```python
+class TaskQueue:
+    def __init__(self, tasks=()):
+        self.tasks = list(tasks)
+
+    def __len__(self):
+        return len(self.tasks)
+
+    def __bool__(self):
+        return bool(self.tasks)
+
+    def __repr__(self):
+        return f'TaskQueue({self.tasks!r})'
+
+
+queue = TaskQueue(['build', 'test'])
+print(bool(queue))  # True
+print(queue)        # TaskQueue(['build', 'test'])
+queue.tasks.clear()
+print(bool(queue))  # False
+```
+
+这里 `bool(queue)` 默认可以根据 `__len__` 判断，但显式定义 `__bool__` 能把“空队列为假”的意图写清楚。特殊方法的价值在于让对象遵守既有协议，从而自然地接入 `len`、`if`、`for` 等语言结构。
+
+如果类没有 `__iter__`，但实现了从 `0` 开始、遇到 `IndexError` 结束的 `__getitem__`，Python 也可以通过旧式序列协议迭代它：
+
+```python
+class LegacySequence:
+    def __init__(self, values):
+        self.values = list(values)
+
+    def __getitem__(self, index):
+        return self.values[index]
+
+
+print(list(LegacySequence(['a', 'b', 'c'])))  # ['a', 'b', 'c']
+```
+
+这是一种兼容机制，并不意味着所有自定义容器都应该省略 `__iter__`；新代码通常应直接实现表达意图更清楚的迭代器协议。
+
 ## CPython 中的对象模型
 
 从 CPython 的实现角度看，Python 对象通常都包含一个对象头，用来保存运行时元数据。最基本的对象头包括：
@@ -64,12 +106,28 @@ print(list(countdown))      # [3, 2, 1]
 
 可变序列会复用不可变序列的大部分操作，同时增加修改内容的方法，例如 `append()`、`extend()` 和 `insert()`。
 
+可以用一个小例子观察“引用序列”和“扁平序列”的差异：列表保存的是对象引用，而 `array.array` 直接按统一类型保存数值：
+
+```python
+from array import array
+
+values = [1, 2, 3]
+numbers = array('i', values)
+
+values[0] = 99
+print(values)   # [99, 2, 3]
+print(numbers)  # array('i', [1, 2, 3])
+```
+
+这里传给 `array` 的列表只是初始化数据，两个对象之后独立变化。`array` 的紧凑存储来自“元素类型统一”，不是因为它保存了列表的引用。
+
 ## 列表推导式与生成器表达式
 
 列表推导式的作用很单一：构建列表。它适合目标就是一个列表、并且希望立即得到全部结果的场景：
 
 ```python
 squares = [x * x for x in range(10)]
+print(squares[:4])  # [0, 1, 4, 9]
 ```
 
 如果要构建元组、数组或其他类型的序列，可以把列表推导式传给相应的构造函数，但这种写法会先创建一个完整的中间列表：
@@ -82,7 +140,24 @@ coordinates = tuple([x * 2 for x in range(5)])
 
 ```python
 coordinates = tuple(x * 2 for x in range(5))
+print(coordinates)  # (0, 2, 4, 6, 8)
 ```
+
+生成器表达式本身不会立即计算全部结果。调用 `next()` 时才会继续向前计算：
+
+```python
+def trace(values):
+    for value in values:
+        print(f'processing {value}')
+        yield value * 2
+
+
+items = trace(range(3))
+print(next(items))  # 先输出 processing 0，再输出 0
+print(next(items))  # 先输出 processing 1，再输出 2
+```
+
+这就是“惰性”的具体表现：生成器适合把数据处理拆成流水线，但如果需要重复遍历，就应先物化为列表或元组。
 
 当生成器表达式是函数调用的唯一参数时，可以省略它自身的圆括号：
 
@@ -137,6 +212,7 @@ name, age, city = traveler
 ```python
 items = (1, 2, ['Python'])
 items[2].append('Fluent Python')
+print(items)  # (1, 2, ['Python', 'Fluent Python'])
 ```
 
 这里不能替换 `items[2]`，但仍然可以修改该位置所引用的列表。
@@ -168,6 +244,13 @@ print(getsizeof(numbers_list))
 ```python
 hash((1, 2, 'Python'))       # 正常返回哈希值
 hash((1, 2, ['Python']))     # TypeError: unhashable type: 'list'
+```
+
+因此，下面这个字典键是合法的，而包含列表的元组不能作为键：
+
+```python
+locations = {(31.23, 121.47): 'Shanghai'}
+print(locations[(31.23, 121.47)])  # Shanghai
 ```
 
 不可哈希的元组不能作为字典的键，也不能作为集合的元素。可以调用内置函数 `hash()`，并捕获 `TypeError`，判断一个对象的值是否固定到足以参与哈希：
@@ -208,6 +291,14 @@ result = [y for x in data if (y := transform(x)) is not None]
 ```
 
 这里的 `x` 不会因此出现在外层作用域中，但 `y` 可能仍然可以在外层访问。在函数内部，它属于当前函数作用域；在模块级代码中，则属于模块作用域。因此，不能简单地说海象运算符创建的变量“一定局限在函数内”。
+
+下面的例子展示了它适合“计算一次、判断并复用结果”的场景：
+
+```python
+text = 'Python'
+if (length := len(text)) >= 6:
+    print(f'{text} has {length} characters')  # Python has 6 characters
+```
 
 ## 小结
 
