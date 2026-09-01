@@ -1,0 +1,107 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const githubUser = '0x4B-traveler';
+const apiUrl = new URL('https://api.github.com/search/issues');
+apiUrl.searchParams.set('q', `author:${githubUser} is:pr is:merged is:public`);
+apiUrl.searchParams.set('per_page', '100');
+apiUrl.searchParams.set('sort', 'updated');
+apiUrl.searchParams.set('order', 'desc');
+
+type GitHubPullRequest = {
+	title: string;
+	number: number;
+	html_url: string;
+	repository_url: string;
+	created_at: string;
+	pull_request: { merged_at: string | null };
+};
+
+type ProjectGroup = {
+	repository: string;
+	url: string;
+	pullRequests: GitHubPullRequest[];
+};
+
+let syncError = '';
+let contributions: GitHubPullRequest[] = [];
+
+try {
+	const token = import.meta.env.GITHUB_TOKEN;
+	const response = await fetch(apiUrl, {
+		headers: {
+			Accept: 'application/vnd.github+json',
+			'X-GitHub-Api-Version': '2022-11-28',
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
+		},
+	});
+
+	if (!response.ok) throw new Error(`GitHub API 返回 ${response.status}`);
+	const result = await response.json() as { items: GitHubPullRequest[] };
+	contributions = result.items
+		.filter((item) => item.pull_request.merged_at)
+		.filter((item) => item.repository_url.split('/').at(-2)?.toLocaleLowerCase() !== githubUser.toLocaleLowerCase())
+		.sort((a, b) => new Date(b.pull_request.merged_at!).valueOf() - new Date(a.pull_request.merged_at!).valueOf());
+} catch (error) {
+	syncError = error instanceof Error ? error.message : '无法读取 GitHub 数据';
+}
+
+const projectMap = new Map<string, ProjectGroup>();
+for (const pullRequest of contributions) {
+	const repository = pullRequest.repository_url.replace('https://api.github.com/repos/', '');
+	const group = projectMap.get(repository) ?? {
+		repository,
+		url: `https://github.com/${repository}`,
+		pullRequests: [],
+	};
+	group.pullRequests.push(pullRequest);
+	projectMap.set(repository, group);
+}
+const projects = [...projectMap.values()].sort((a, b) => {
+	const countDiff = b.pullRequests.length - a.pullRequests.length;
+	return countDiff || a.repository.localeCompare(b.repository);
+});
+const latestMergedAt = contributions[0]?.pull_request.merged_at;
+const formatDate = (date: string) => new Date(date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<Layout title="开源贡献" description={`自动跟踪 ${githubUser} 已合并的开源贡献 PR，并按项目分组。`} activeNav="contributions" wide>
+	<header class="contribution-hero">
+		<div><p class="eyebrow">OPEN SOURCE CONTRIBUTIONS</p><h1>把参与开源的过程，<br /><em>留下可验证的记录。</em></h1></div>
+		<p>自动同步 <a href={`https://github.com/${githubUser}`} target="_blank" rel="noreferrer">@{githubUser}</a> 在其他公开仓库中创建且已合并的 Pull Request，并按上游项目归档。</p>
+	</header>
+
+	<section class="contribution-summary" aria-label="贡献统计">
+		<div><strong>{contributions.length.toString().padStart(2, '0')}</strong><span>已合并 PR</span></div>
+		<div><strong>{projects.length.toString().padStart(2, '0')}</strong><span>参与项目</span></div>
+		<div><strong class="latest-date">{latestMergedAt ? formatDate(latestMergedAt) : '—'}</strong><span>最近合并</span></div>
+	</section>
+
+	<section class="contribution-list">
+		<div class="section-title"><div><p class="eyebrow">MERGED PR LOG</p><h2>按项目查看贡献</h2></div><p>每日自动同步 · 最近合并优先</p></div>
+		{syncError ? (
+			<div class="empty-state error-state"><span>!</span><h3>本次同步失败</h3><p>{syncError}。页面会在下次构建时自动重试。</p></div>
+		) : projects.length > 0 ? (
+			<div class="project-list">
+				{projects.map((project) => <section class="project-group">
+					<header><div><p class="project-owner">{project.repository.split('/')[0]}</p><h3>{project.repository.split('/')[1]}</h3></div><div class="project-meta"><strong>{project.pullRequests.length.toString().padStart(2, '0')}</strong><span>个已合并 PR</span><a href={project.url} target="_blank" rel="noreferrer">查看项目 ↗</a></div></header>
+					<div class="pr-list">
+						{project.pullRequests.map((item) => <article class="pr-row">
+							<span class="merged-mark" aria-label="已合并">✓</span>
+							<div class="pr-copy"><h4><a href={item.html_url} target="_blank" rel="noreferrer">{item.title}</a></h4><p>#{item.number} · 创建于 {formatDate(item.created_at)}</p></div>
+							<div class="merge-info"><span>已合并</span><time datetime={item.pull_request.merged_at!}>{formatDate(item.pull_request.merged_at!)}</time></div>
+						</article>)}
+					</div>
+				</section>)}
+			</div>
+		) : (
+			<div class="empty-state"><span>＋</span><h3>暂无已合并的外部贡献 PR</h3><p>符合条件的 PR 合并后，会在下一次自动同步时出现在这里。</p></div>
+		)}
+	</section>
+</Layout>
+
+<style>
+	.eyebrow{font:700 .68rem var(--font-mono);letter-spacing:.18em;color:var(--accent-soft);margin:0 0 1rem}.contribution-hero{padding:7rem 0 5rem;display:grid;grid-template-columns:1.35fr .65fr;align-items:end;gap:5rem}.contribution-hero h1{font-size:clamp(3rem,6vw,5.8rem);line-height:1.03;letter-spacing:-.06em;margin:0}.contribution-hero h1 em{font-family:var(--font-reading);font-style:normal;font-weight:500;color:transparent;background:linear-gradient(100deg,var(--accent-soft),var(--accent-2));background-clip:text}.contribution-hero>p{color:var(--text-secondary);line-height:1.9;padding-left:1.5rem;border-left:1px solid var(--border)}.contribution-summary{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:18px;background:var(--surface);overflow:hidden}.contribution-summary div{padding:1.5rem 1.8rem;border-right:1px solid var(--border)}.contribution-summary div:last-child{border-right:0}.contribution-summary strong,.contribution-summary span{display:block}.contribution-summary strong{font:300 2.8rem/1 var(--font-mono);color:var(--text)}.contribution-summary strong.latest-date{font-size:1.5rem;line-height:1.85}.contribution-summary span{margin-top:.65rem;color:var(--text-muted);font-size:.75rem}.contribution-list{padding:6rem 0 3rem}.section-title{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-bottom:2rem}.section-title h2{font-size:2rem;letter-spacing:-.035em;margin:0}.section-title>p{color:var(--text-muted);font-size:.78rem}.project-list{display:grid;gap:1.2rem}.project-group{border:1px solid var(--border);border-radius:18px;background:var(--surface);overflow:hidden}.project-group>header{display:flex;justify-content:space-between;align-items:center;gap:2rem;padding:1.5rem 1.7rem;background:linear-gradient(110deg,var(--surface-strong),var(--surface));border-bottom:1px solid var(--border)}.project-owner{margin:0 0 .15rem;color:var(--text-muted);font:600 .66rem var(--font-mono);letter-spacing:.08em}.project-group h3{margin:0;font-size:1.35rem}.project-meta{display:grid;grid-template-columns:auto auto auto;align-items:center;gap:.7rem}.project-meta strong{font:400 1.5rem var(--font-mono);color:var(--accent-soft)}.project-meta span{color:var(--text-muted);font-size:.68rem}.project-meta a{margin-left:.8rem;font-size:.72rem}.pr-list{padding:0 1.7rem}.pr-row{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:1rem;padding:1.2rem 0;border-bottom:1px solid var(--border)}.pr-row:last-child{border-bottom:0}.merged-mark{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;color:#9ee6bd;background:rgba(69,190,126,.13);font-weight:800}.pr-copy h4{margin:0;font-size:.9rem}.pr-copy h4 a{color:var(--text)}.pr-copy h4 a:hover{color:var(--accent-soft)}.pr-copy p{margin:.3rem 0 0;color:var(--text-muted);font:500 .65rem var(--font-mono)}.merge-info{text-align:right}.merge-info span,.merge-info time{display:block}.merge-info span{color:#9ee6bd;font-size:.66rem}.merge-info time{margin-top:.25rem;color:var(--text-muted);font-size:.68rem}.empty-state{text-align:center;padding:5rem 1rem;border:1px dashed var(--border-strong);border-radius:18px;background:linear-gradient(135deg,var(--surface),transparent)}.empty-state>span{font-size:2.2rem;color:var(--accent-soft)}.empty-state h3{margin:.8rem 0 .4rem}.empty-state p{color:var(--text-muted);font-size:.8rem}.error-state>span{color:var(--amber)}
+	@media(max-width:900px){.contribution-hero{grid-template-columns:1fr;gap:2rem}}
+	@media(max-width:650px){.contribution-hero{padding:5rem 0 4rem}.contribution-hero>p{padding-left:0;border:0}.contribution-summary div{padding:1.1rem .8rem}.contribution-summary strong{font-size:2rem}.contribution-summary strong.latest-date{font-size:.9rem;line-height:2.25}.contribution-summary span{font-size:.64rem}.contribution-list{padding-top:4rem}.section-title{align-items:start;flex-direction:column;gap:.5rem}.project-group>header{align-items:start;padding:1.2rem;flex-direction:column}.project-meta{width:100%;grid-template-columns:auto 1fr auto}.project-meta a{margin-left:0}.pr-list{padding:0 1.2rem}.pr-row{grid-template-columns:30px 1fr}.merge-info{grid-column:2;text-align:left;display:flex;gap:.5rem}.merge-info span,.merge-info time{display:inline;margin:0}}
+</style>

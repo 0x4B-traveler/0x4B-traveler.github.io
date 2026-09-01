@@ -5,7 +5,7 @@ import GlobalSearch from '../components/GlobalSearch.astro';
 export interface Props {
 	title: string;
 	description?: string;
-	activeNav?: 'home' | 'knowledge' | 'portfolio' | 'reading' | 'about';
+	activeNav?: 'home' | 'knowledge' | 'portfolio' | 'contributions' | 'reading' | 'about';
 	wide?: boolean;
 	socialImage?: string | null;
 }
@@ -24,6 +24,7 @@ const navItems = [
 	{ label: '首页', href: '/', id: 'home' },
 	{ label: '知识库', href: '/knowledge', id: 'knowledge' },
 	{ label: '项目与能力', href: '/portfolio', id: 'portfolio' },
+	{ label: '开源贡献', href: '/contributions', id: 'contributions' },
 	{ label: '读书', href: '/reading', id: 'reading' },
 	{ label: '关于', href: '/about', id: 'about' },
 ];
