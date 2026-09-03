@@ -1,6 +1,7 @@
 ---
 title: redo log、binlog及两阶段提交
 date: 2026-08-26
+updated: 2026-09-03
 description: 理解 MySQL 日志系统以及两阶段提交如何保证数据一致性
 domain: database
 tags: [mysql, 数据库]
