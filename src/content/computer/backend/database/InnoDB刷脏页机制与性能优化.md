@@ -1,6 +1,7 @@
 ---
 title: InnoDB刷脏页机制与性能优化
 date: 2026-08-27
+updated: 2026-09-03
 description: 理解 Buffer Pool、checkpoint、脏页淘汰及相关 I/O 参数的调优方法
 domain: database
 tags: [mysql, 数据库]
@@ -234,6 +235,7 @@ SHOW VARIABLES LIKE 'innodb_flush_neighbors';
 
 ## 参考资料
 
+- [极客时间：什么情况会引发数据库的 flush](https://time.geekbang.com/column/article/70848)
 - [MySQL 8.4 Reference Manual：Configuring InnoDB I/O Capacity](https://dev.mysql.com/doc/refman/8.4/en/innodb-configuring-io-capacity.html)
 - [MySQL 8.4 Reference Manual：InnoDB Checkpoints](https://dev.mysql.com/doc/refman/8.4/en/innodb-checkpoints.html)
 - [MySQL 8.0 Reference Manual：Configuring Buffer Pool Flushing](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool-flushing.html)

@@ -1,3 +1,8 @@
 /node_modules/
 /.astro/
 /dist/
+
+# Local secret references/configuration
+.env
+.env.*
+!.env.example
